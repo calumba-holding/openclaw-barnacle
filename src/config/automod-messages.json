@@ -1,6 +1,13 @@
 {
-  "1464411068632797274": {
-    "trigger": "BARNACLE_TEST_TRIGGER",
-    "message": "🦪 Ahoy {user}! This reef stays tidy, so we scrub that word clean."
-  }
+  "1464411068632797274": [
+    {
+      "trigger": "BARNACLE_TEST_TRIGGER",
+      "message": "🦪 Ahoy {user}! This reef stays tidy, so we scrub that word clean."
+    },
+    {
+      "trigger": "<@&1458337160452243487>",
+      "message": "🦀 Barnacles don’t ring the mod bell unless the tide needs it. Keep it calm unless it really needs modding.",
+      "confirmRoleId": "1458337160452243487"
+    }
+  ]
 }

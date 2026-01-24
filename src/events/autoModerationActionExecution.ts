@@ -4,19 +4,22 @@ import {
 	type ListenerEventData,
 	ListenerEvent,
 	Routes,
+	Section,
 	TextDisplay,
 	Webhook,
 	serializePayload,
 	type MessagePayloadObject
 } from "@buape/carbon"
+import AutomodConfirmButton from "../components/automodConfirmButton.js"
 import { readFile } from "node:fs/promises"
 
 type AutomodRuleConfig = {
 	trigger: string
 	message: string
+	confirmRoleId?: string
 }
 
-type AutomodMessageMap = Record<string, AutomodRuleConfig>
+type AutomodMessageMap = Record<string, AutomodRuleConfig | AutomodRuleConfig[]>
 
 type AutoModerationActionExecutionData =
 	ListenerEventData[typeof ListenerEvent.AutoModerationActionExecution]
@@ -97,8 +100,19 @@ const getOrCreateWebhook = async (client: Client, channelId: string) => {
 	return webhook
 }
 
+const resolveRuleConfig = (
+	rules: AutomodRuleConfig | AutomodRuleConfig[],
+	matchedKeyword: string
+) => {
+	const ruleList = Array.isArray(rules) ? rules : [rules]
+	return ruleList.find((rule) => normalizeKeyword(rule.trigger) === matchedKeyword)
+}
+
 const sendWebhookMessage = async (webhook: Webhook, payload: WebhookSendPayload) => {
-	const serialized = serializePayload(payload)
+	const serialized = serializePayload({
+		...payload,
+		allowedMentions: { parse: [] }
+	})
 	await webhook.rest.post(webhook.urlWithOptions({ wait: true, withComponents: true }), {
 		body: serialized
 	})
@@ -129,24 +143,38 @@ export default class AutoModerationActionExecution extends AutoModerationActionE
 			return
 		}
 
-		const trigger = normalizeKeyword(ruleConfig.trigger)
 		const matchedKeyword = normalizeKeyword(data.matched_keyword)
+		const activeRule = resolveRuleConfig(ruleConfig, matchedKeyword)
 
-		if (trigger !== matchedKeyword) {
+		if (!activeRule) {
 			return
 		}
 
 		const sourceContent = data.content || data.matched_content || ""
 		const redactedContent = sourceContent
 			? sourceContent.replace(
-				new RegExp(escapeRegExp(ruleConfig.trigger), "gi"),
+				new RegExp(escapeRegExp(activeRule.trigger), "gi"),
 				"<redacted>"
 			)
 			: "<redacted>"
 
-		const warningMessage = formatAutomodMessage(ruleConfig.message, data)
+		const warningMessage = formatAutomodMessage(activeRule.message, data)
+		const warningComponents = [new TextDisplay(warningMessage)]
+		if (activeRule.confirmRoleId) {
+			warningComponents.push(
+				new Section(
+					[
+						new TextDisplay(
+							"Need the crustacean crew? Tap to request a mod splash."
+						)
+					],
+					new AutomodConfirmButton(activeRule.confirmRoleId)
+				)
+			)
+		}
+
 		const warningPayload = serializePayload({
-			components: [new TextDisplay(warningMessage)],
+			components: warningComponents,
 			allowedMentions: {
 				users: [data.user_id]
 			}
