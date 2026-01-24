@@ -5,6 +5,7 @@ import {
 	Container,
 	ListenerEvent,
 	Routes,
+	Separator,
 	TextDisplay,
 	serializePayload
 } from "@buape/carbon"
@@ -77,11 +78,15 @@ export default class AutoModerationActionExecution extends AutoModerationActionE
 		const warningMessage = formatAutomodMessage(ruleConfig.message, data)
 		const payload = serializePayload({
 			components: [
-				new Container([
-					new TextDisplay("Original Message"),
-					new TextDisplay(redactedContent)
-				]),
-				new TextDisplay(warningMessage)
+				new Container(
+					[
+						new TextDisplay("**Original Message**"),
+						new TextDisplay(redactedContent),
+						new Separator({ divider: true, spacing: "small" }),
+						new TextDisplay(warningMessage)
+					],
+					{ accentColor: "#f85149" }
+				)
 			],
 			allowedMentions: {
 				users: [data.user_id]
