@@ -11,7 +11,8 @@ const gateway = new GatewayPlugin({
 		GatewayIntents.Guilds |
 		GatewayIntents.GuildMessages |
 		GatewayIntents.MessageContent |
-		GatewayIntents.AutoModerationExecution
+		GatewayIntents.AutoModerationExecution,
+	autoInteractions: true
 })
 
 const client = new Client(
@@ -22,6 +23,9 @@ const client = new Client(
 		publicKey: "unused",
 		token: process.env.DISCORD_BOT_TOKEN,
 		autoDeploy: true,
+		disableDeployRoute: true,
+		disableInteractionsRoute: true,
+		disableEventsRoute: true,
 		devGuilds: process.env.DISCORD_DEV_GUILDS?.split(","), // Optional: comma-separated list of dev guild IDs
 	},
 	{

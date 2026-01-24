@@ -1,11 +1,11 @@
 import {
 	ApplicationCommandOptionType,
-	Command,
 	type CommandInteraction,
 	LinkButton,
 	Section,
 	TextDisplay
 } from "@buape/carbon"
+import BaseCommand from "./base.js"
 
 type GitHubIssue = {
 	html_url: string
@@ -27,10 +27,9 @@ class GitHubLinkButton extends LinkButton {
 	}
 }
 
-export default class GithubCommand extends Command {
+export default class GithubCommand extends BaseCommand {
 	name = "github"
 	description = "Find a GitHub issue or pull request"
-	defer = true
 	options = [
 		{
 			name: "number",
