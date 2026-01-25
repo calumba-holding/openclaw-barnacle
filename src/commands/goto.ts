@@ -7,19 +7,19 @@ const stuckLink = "https://docs.clawd.bot/help/faq#im-stuck-whats-the-fastest-wa
 class GotoGuideCommand extends GotoCommand {
 	name = "guide"
 	description = "Share the server guide"
-	protected message = `## [Check the Server Guide here](${guideLink})`
+	protected message = `## [Check the Server Guide here](<${guideLink}>)`
 }
 
 class GotoServerFaqCommand extends GotoCommand {
 	name = "server-faq"
 	description = "Point to the server FAQ"
-	protected message = `Your question is answered in the server FAQ in our [Server Guide](${guideLink})`
+	protected message = `Your question is answered in the server FAQ in our [Server Guide](<${guideLink}>)`
 }
 
 class GotoHelpCommand extends GotoCommand {
 	name = "help"
 	description = "Share help instructions"
-	protected message = `Use <#1459642797895319552> for help. The fastest way to get your problem solved is to follow the instructions here: ${stuckLink}`
+	protected message = `Use <#1459642797895319552> for help. The fastest way to get your problem solved is to follow the instructions here: <${stuckLink}>`
 }
 
 class GotoModelCommand extends GotoCommand {
@@ -31,7 +31,7 @@ class GotoModelCommand extends GotoCommand {
 class GotoStuckCommand extends GotoCommand {
 	name = "stuck"
 	description = "Share the fastest way to get unstuck"
-	protected message = `The fastest way to get your problem solved is to follow the instructions here: ${stuckLink}`
+	protected message = `The fastest way to get your problem solved is to follow the instructions here: <${stuckLink}>`
 }
 
 export default class GotoRootCommand extends CommandWithSubcommands {
