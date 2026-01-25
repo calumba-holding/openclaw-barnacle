@@ -43,7 +43,7 @@ class GotoDocsCommand extends GotoCommand {
 class GotoInstallCommand extends GotoCommand {
 	name = "install"
 	description = "Share the install script link"
-	protected message = "Install instructions are available at <https://clawd.bot>."
+	protected message = "You can find the one-liner install script at <https://clawd.bot>."
 }
 
 export default class GotoRootCommand extends CommandWithSubcommands {
