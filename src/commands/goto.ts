@@ -7,7 +7,7 @@ const stuckLink = "https://docs.clawd.bot/help/faq#im-stuck-whats-the-fastest-wa
 class GotoGuideCommand extends GotoCommand {
 	name = "guide"
 	description = "Share the server guide"
-	protected message = `## Check the Server Guide here\n${guideLink}`
+	protected message = `## [Check the Server Guide here](${guideLink})`
 }
 
 class GotoServerFaqCommand extends GotoCommand {
