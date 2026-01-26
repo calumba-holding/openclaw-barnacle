@@ -17,6 +17,7 @@ type AutomodRuleConfig = {
 	trigger: string
 	message: string
 	confirmRoleId?: string
+	redact?: boolean
 }
 
 type AutomodMessageMap = Record<string, AutomodRuleConfig | AutomodRuleConfig[]>
@@ -151,12 +152,14 @@ export default class AutoModerationActionExecution extends AutoModerationActionE
 		}
 
 		const sourceContent = data.content || data.matched_content || ""
+		const shouldRedact = activeRule.redact !== false
 		const redactedContent = sourceContent
 			? sourceContent.replace(
 				new RegExp(escapeRegExp(activeRule.trigger), "gi"),
 				"<redacted>"
 			)
 			: "<redacted>"
+		const repostContent = shouldRedact ? redactedContent : sourceContent || "<redacted>"
 
 		const warningMessage = formatAutomodMessage(activeRule.message, data)
 		const warningComponents = [new TextDisplay(warningMessage)]
@@ -197,7 +200,7 @@ export default class AutoModerationActionExecution extends AutoModerationActionE
 				undefined
 
 			await sendWebhookMessage(webhook, {
-				components: [new TextDisplay(redactedContent)],
+				components: [new TextDisplay(repostContent)],
 				username: displayName,
 				avatar_url: avatarUrl
 			})

@@ -6,8 +6,13 @@
     },
     {
       "trigger": "<@&1458337160452243487>",
-      "message": "🦀 Barnacles don’t ring the mod bell unless the tide needs it. Keep it calm unless it really needs modding.",
-      "confirmRoleId": "1458337160452243487"
+      "message": "{user}, please don't ping the moderators directly. If you want to report someone or something, use the instructions in <#1465158042675843142>, or in an extreme emergency, ping one of the moderators who is marked as online in the member list.",
+      "redact": false
+    },
+    {
+      "trigger": "<@387380367612706819>",
+      "message": "{user}, please don't ping Peter for issues, use <#1459642797895319552> or <#1459007081603403828> if you need help, use <#1458141495701012561> to discuss PRs, or use any of the many other channels in this server as they're intended.\n\n**If you have a problem with the Discord specifically, use <#1465158042675843142> or DM <@439223656200273932>**",
+      "redact": false
     }
   ]
 }
