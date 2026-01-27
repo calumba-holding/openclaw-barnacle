@@ -2,7 +2,7 @@ import { CommandWithSubcommands } from "@buape/carbon"
 import GotoCommand from "./gotoCommand.js"
 
 const guideLink = "https://discord.com/channels/1456350064065904867/@home"
-const stuckLink = "https://docs.clawd.bot/help/faq#im-stuck-whats-the-fastest-way-to-get-unstuck"
+const stuckLink = "https://docs.molt.bot/help/faq#im-stuck-whats-the-fastest-way-to-get-unstuck"
 
 class GotoGuideCommand extends GotoCommand {
 	name = "guide"
@@ -37,13 +37,13 @@ class GotoStuckCommand extends GotoCommand {
 class GotoDocsCommand extends GotoCommand {
 	name = "docs"
 	description = "Share the docs link"
-	protected message = "Docs are available at <https://docs.clawd.bot>."
+	protected message = "Docs are available at <https://docs.molt.bot>."
 }
 
 class GotoInstallCommand extends GotoCommand {
 	name = "install"
 	description = "Share the install script link"
-	protected message = "You can find the one-liner install script at <https://clawd.bot>."
+	protected message = "You can find the one-liner install script at <https://molt.bot>."
 }
 
 export default class GotoRootCommand extends CommandWithSubcommands {
