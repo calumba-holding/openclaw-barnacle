@@ -2,7 +2,7 @@ import { CommandWithSubcommands } from "@buape/carbon"
 import GotoCommand from "./gotoCommand.js"
 
 const guideLink = "https://discord.com/channels/1456350064065904867/@home"
-const stuckLink = "https://docs.molt.bot/help/faq#im-stuck-whats-the-fastest-way-to-get-unstuck"
+const stuckLink = "https://docs.openclaw.ai/help/faq#im-stuck-whats-the-fastest-way-to-get-unstuck"
 
 class GotoGuideCommand extends GotoCommand {
 	name = "guide"
@@ -37,19 +37,25 @@ class GotoStuckCommand extends GotoCommand {
 class GotoDocsCommand extends GotoCommand {
 	name = "docs"
 	description = "Share the docs link"
-	protected message = "Docs are available at <https://docs.molt.bot>."
+	protected message = "Docs are available at <https://docs.openclaw.ai>."
 }
 
 class GotoSecurityCommand extends GotoCommand {
 	name = "security"
 	description = "Share the security docs link"
-	protected message = "Security docs are available at <https://docs.molt.bot/security>."
+	protected message = "Security docs are available at <https://docs.openclaw.ai/security>."
 }
 
 class GotoInstallCommand extends GotoCommand {
 	name = "install"
 	description = "Share the install script link"
-	protected message = "You can find the one-liner install script at <https://molt.bot>."
+	protected message = "You can find the one-liner install script at <https://openclaw.ai>."
+}
+
+class GotoBlogRenameCommand extends GotoCommand {
+	name = "blog-rename"
+	description = "Share the blog rename post link"
+	protected message = "Read about our rebranding from Clawdbot -> Moltbot -> OpenClaw here: <https://openclaw.ai/blog/introducing-openclaw>."
 }
 
 export default class GotoRootCommand extends CommandWithSubcommands {
@@ -63,6 +69,7 @@ export default class GotoRootCommand extends CommandWithSubcommands {
 		new GotoStuckCommand(),
 		new GotoDocsCommand(),
 		new GotoSecurityCommand(),
-		new GotoInstallCommand()
+		new GotoInstallCommand(),
+		new GotoBlogRenameCommand()
 	]
 }
