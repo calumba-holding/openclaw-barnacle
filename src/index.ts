@@ -6,6 +6,7 @@ import AnswerOverflowCommand from "./commands/answeroverflow.js"
 import GotoRootCommand from "./commands/goto.js"
 import ApplicationAuthorized from "./events/authorized.js"
 import AutoModerationActionExecution from "./events/autoModerationActionExecution.js"
+import AutoPublishMessageCreate from "./events/autoPublishMessageCreate.js"
 import Ready from "./events/ready.js"
 
 const gateway = new GatewayPlugin({
@@ -39,6 +40,7 @@ const client = new Client(
 		listeners: [
 			new ApplicationAuthorized(),
 			new AutoModerationActionExecution(),
+			new AutoPublishMessageCreate(),
 			new Ready()
 		],
 	},
