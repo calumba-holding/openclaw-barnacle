@@ -1,13 +1,21 @@
 import { Database } from "bun:sqlite"
 import { existsSync, mkdirSync } from "node:fs"
-import { dirname, resolve } from "node:path"
+import { dirname, isAbsolute, resolve } from "node:path"
+import { fileURLToPath } from "node:url"
 import { drizzle } from "drizzle-orm/bun-sqlite"
 import { migrate } from "drizzle-orm/bun-sqlite/migrator"
 
 import * as schema from "./db/schema.js"
 
-const DB_PATH = Bun.env.DB_PATH ?? "data/hermit.sqlite"
-const MIGRATIONS_FOLDER = Bun.env.DRIZZLE_MIGRATIONS ?? "drizzle"
+const projectRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..")
+
+const resolveFromProjectRoot = (path: string) =>
+	isAbsolute(path) ? path : resolve(projectRoot, path)
+
+const DB_PATH = resolveFromProjectRoot(Bun.env.DB_PATH ?? "data/hermit.sqlite")
+const MIGRATIONS_FOLDER = resolveFromProjectRoot(
+	Bun.env.DRIZZLE_MIGRATIONS ?? "drizzle"
+)
 
 mkdirSync(dirname(DB_PATH), { recursive: true })
 
@@ -17,9 +25,8 @@ sqlite.exec("PRAGMA synchronous = NORMAL;")
 
 export const db = drizzle(sqlite, { schema })
 
-const migrationsPath = resolve(MIGRATIONS_FOLDER)
-if (existsSync(migrationsPath) && Bun.env.SKIP_DB_MIGRATIONS !== "1") {
-	migrate(db, { migrationsFolder: migrationsPath })
+if (existsSync(MIGRATIONS_FOLDER) && Bun.env.SKIP_DB_MIGRATIONS !== "1") {
+	migrate(db, { migrationsFolder: MIGRATIONS_FOLDER })
 }
 
 export { DB_PATH, sqlite }

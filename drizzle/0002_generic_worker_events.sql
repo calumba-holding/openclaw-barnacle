@@ -1,13 +1,14 @@
 ALTER TABLE helper_events
 ADD COLUMN event_type TEXT NOT NULL DEFAULT 'helper_command';
-
+--> statement-breakpoint
 UPDATE helper_events
 SET event_type = 'helper_command'
 WHERE event_type IS NULL OR TRIM(event_type) = '';
-
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_helper_events_event_type ON helper_events(event_type);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_helper_events_thread_time ON helper_events(thread_id, event_time DESC);
-
+--> statement-breakpoint
 CREATE TABLE IF NOT EXISTS tracked_threads (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   thread_id TEXT NOT NULL UNIQUE,
@@ -17,7 +18,9 @@ CREATE TABLE IF NOT EXISTS tracked_threads (
   received_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   raw_payload TEXT NOT NULL
 );
-
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_tracked_threads_solved ON tracked_threads(solved);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_tracked_threads_last_checked ON tracked_threads(last_checked DESC);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_tracked_threads_received_at ON tracked_threads(received_at DESC);

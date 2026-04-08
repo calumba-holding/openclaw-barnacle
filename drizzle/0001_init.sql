@@ -10,8 +10,11 @@ CREATE TABLE IF NOT EXISTS helper_events (
   received_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   raw_payload TEXT NOT NULL
 );
-
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_helper_events_event_time ON helper_events(event_time DESC);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_helper_events_command ON helper_events(command);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_helper_events_thread_id ON helper_events(thread_id);
+--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS idx_helper_events_invoked_by_id ON helper_events(invoked_by_id);
