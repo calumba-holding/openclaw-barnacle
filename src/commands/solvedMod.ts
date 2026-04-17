@@ -3,7 +3,7 @@ import {
 	ApplicationIntegrationType,
 	Container,
 	type CommandInteraction,
-	GuildThreadChannel,
+	type GuildThreadChannel,
 	InteractionContextType,
 	Permission,
 	Routes,
@@ -41,11 +41,11 @@ type MarkSolutionWorkerEvent = {
 
 const isThreadLikeChannel = (
 	channel: CommandInteraction["channel"]
-): channel is GuildThreadChannel<any> =>
+): channel is GuildThreadChannel<any, true> =>
 	Boolean(
 		channel &&
-			typeof (channel as GuildThreadChannel<any>).archive === "function" &&
-			typeof (channel as GuildThreadChannel<any>).lock === "function"
+			typeof (channel as GuildThreadChannel<any, true>).archive === "function" &&
+			typeof (channel as GuildThreadChannel<any, true>).lock === "function"
 	)
 
 const addCheckmarkReaction = async (interaction: CommandInteraction) => {

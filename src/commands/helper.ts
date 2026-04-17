@@ -18,11 +18,11 @@ const closeThreadMessage =
 
 const isThreadLikeChannel = (
 	channel: CommandInteraction["channel"]
-): channel is GuildThreadChannel<any> =>
+): channel is GuildThreadChannel<any, true> =>
 	Boolean(
 		channel &&
-			typeof (channel as GuildThreadChannel<any>).archive === "function" &&
-			typeof (channel as GuildThreadChannel<any>).lock === "function"
+			typeof (channel as GuildThreadChannel<any, true>).archive === "function" &&
+			typeof (channel as GuildThreadChannel<any, true>).lock === "function"
 	)
 
 class HelperWarnNewThreadCommand extends BaseCommand {
