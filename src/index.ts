@@ -1,20 +1,25 @@
 import { Client } from "@buape/carbon"
-import { GatewayIntents, GatewayPlugin } from "@buape/carbon/gateway"
-import GithubCommand from "./commands/github.js"
-import SolvedModCommand from "./commands/solvedMod.js"
-import SayRootCommand from "./commands/say.js"
-import RoleCommand from "./commands/role.js"
-import HelperRootCommand from "./commands/helper.js"
+import { createHandler } from "@buape/carbon/adapters/fetch"
+import {
+	CloudflareGatewayDurableObject,
+	CloudflareGatewayPlugin
+} from "@buape/carbon/cloudflare-gateway"
+import { GatewayIntents } from "@buape/carbon/gateway"
 import AdminCommand from "./commands/admin.js"
+import GithubCommand from "./commands/github.js"
+import HelperRootCommand from "./commands/helper.js"
+import RoleCommand from "./commands/role.js"
+import SayRootCommand from "./commands/say.js"
+import SolvedModCommand from "./commands/solvedMod.js"
 import AutoModerationActionExecution from "./events/autoModerationActionExecution.js"
 import AutoPublishMessageCreate from "./events/autoPublishMessageCreate.js"
 import Ready from "./events/ready.js"
 import ThreadCreateWelcome from "./events/threadCreateWelcome.js"
-import { startHelperLogsServer } from "./server/helperLogsServer.js"
+import { hydrateRuntimeEnv, type HermitEnv } from "./runtime/env.js"
+import { registerHelperLogsRoutes } from "./server/helperLogsServer.js"
+import { runThreadLengthMonitor } from "./services/threadLengthMonitor.js"
 
-startHelperLogsServer()
-
-const gateway = new GatewayPlugin({
+const gateway = new CloudflareGatewayPlugin({
 	intents:
 		GatewayIntents.Guilds |
 		GatewayIntents.GuildMessages |
@@ -23,18 +28,15 @@ const gateway = new GatewayPlugin({
 	autoInteractions: true
 })
 
-const client = new Client(
+export const client = new Client(
 	{
-		baseUrl: "http://localhost:3000",
-		deploySecret: "unused",
+		baseUrl: process.env.BASE_URL,
+		deploySecret: process.env.DEPLOY_SECRET,
 		clientId: process.env.DISCORD_CLIENT_ID,
-		publicKey: "unused",
+		publicKey: process.env.DISCORD_PUBLIC_KEY,
 		token: process.env.DISCORD_BOT_TOKEN,
 		autoDeploy: true,
-		disableDeployRoute: true,
-		disableInteractionsRoute: true,
-		disableEventsRoute: true,
-		devGuilds: process.env.DISCORD_DEV_GUILDS?.split(","), // Optional: comma-separated list of dev guild IDs
+		devGuilds: process.env.DISCORD_DEV_GUILDS?.split(",")
 	},
 	{
 		commands: [
@@ -50,10 +52,30 @@ const client = new Client(
 			new AutoPublishMessageCreate(),
 			new ThreadCreateWelcome(),
 			new Ready()
-		],
+		]
 	},
 	[gateway]
 )
+
+registerHelperLogsRoutes(client)
+
+const handler = createHandler(client)
+
+export { CloudflareGatewayDurableObject }
+
+export default {
+	fetch(request: Request, env: HermitEnv, ctx: ExecutionContext) {
+		hydrateRuntimeEnv(env)
+		return handler(request, {
+			env,
+			waitUntil: ctx.waitUntil.bind(ctx)
+		})
+	},
+	scheduled(_controller: ScheduledController, env: HermitEnv, ctx: ExecutionContext) {
+		hydrateRuntimeEnv(env)
+		ctx.waitUntil(runThreadLengthMonitor(client))
+	}
+} satisfies ExportedHandler<Env>
 
 declare global {
 	namespace NodeJS {
@@ -63,15 +85,11 @@ declare global {
 			DISCORD_CLIENT_ID: string;
 			DISCORD_PUBLIC_KEY: string;
 			DISCORD_BOT_TOKEN: string;
+			DISCORD_DEV_GUILDS?: string;
 			ANSWER_OVERFLOW_API_KEY?: string;
-			ANSWER_OVERFLOW_API_BASE_URL?: string;
 			HELPER_THREAD_WELCOME_PARENT_ID?: string;
 			HELPER_THREAD_WELCOME_TEMPLATE?: string;
 			THREAD_LENGTH_CHECK_INTERVAL_HOURS?: string;
-			HELPER_LOGS_HOST?: string;
-			HELPER_LOGS_PORT?: string;
-			DB_PATH?: string;
-			DRIZZLE_MIGRATIONS?: string;
 		}
 	}
 }

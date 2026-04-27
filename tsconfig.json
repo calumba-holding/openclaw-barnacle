@@ -1,5 +1,5 @@
 {
-	"include": ["src"],
+	"include": ["src", "worker-configuration.d.ts"],
 	"exclude": ["node_modules", "dist"],
 	"compilerOptions": {
 		"strict": true,
@@ -7,6 +7,8 @@
 		"lib": ["dom", "es2022"],
 		"module": "NodeNext",
 		"moduleResolution": "NodeNext",
+		"types": ["node"],
+		"resolveJsonModule": true,
 		"baseUrl": ".",
 		"outDir": "dist"
 	}

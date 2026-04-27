@@ -20,14 +20,12 @@ const SECOND_WARNING_THRESHOLD = 150
 const AUTO_CLOSE_THRESHOLD = 200
 const DEFAULT_FETCH_LIMIT = 500
 
-let monitorStarted = false
-let monitorInterval: ReturnType<typeof setInterval> | null = null
 let monitorRunInFlight = false
 
-const parseIntervalMs = () => {
+const isThreadLengthMonitorEnabled = () => {
 	const rawValue = process.env.THREAD_LENGTH_CHECK_INTERVAL_HOURS?.trim()
 	if (!rawValue) {
-		return null
+		return false
 	}
 
 	const intervalHours = Number.parseFloat(rawValue)
@@ -35,10 +33,10 @@ const parseIntervalMs = () => {
 		console.warn(
 			`THREAD_LENGTH_CHECK_INTERVAL_HOURS must be a positive number. Got "${rawValue}".`
 		)
-		return null
+		return false
 	}
 
-	return Math.round(intervalHours * 60 * 60 * 1000)
+	return true
 }
 
 const getErrorStatus = (error: unknown) => {
@@ -250,42 +248,24 @@ const runMonitorPass = async (client: Client) => {
 	}
 }
 
-export const startThreadLengthMonitor = (client: Client) => {
-	if (monitorStarted) {
+export const runThreadLengthMonitor = async (client: Client) => {
+	if (!isThreadLengthMonitorEnabled()) {
 		return
 	}
 
-	monitorStarted = true
-
-	const intervalMs = parseIntervalMs()
-	if (!intervalMs) {
-		console.log("Thread length monitor disabled.")
+	if (monitorRunInFlight) {
+		console.log(
+			"Skipping thread length monitor pass because the previous pass is still running."
+		)
 		return
 	}
 
-	const run = async () => {
-		if (monitorRunInFlight) {
-			console.log("Skipping thread length monitor pass because the previous pass is still running.")
-			return
-		}
-
-		monitorRunInFlight = true
-		try {
-			await runMonitorPass(client)
-		} catch (error) {
-			console.error("Thread length monitor pass failed:", error)
-		} finally {
-			monitorRunInFlight = false
-		}
-	}
-
-	console.log(`Thread length monitor enabled with interval ${intervalMs}ms.`)
-	void run()
-	monitorInterval = setInterval(() => {
-		void run()
-	}, intervalMs)
-
-	if (typeof monitorInterval.unref === "function") {
-		monitorInterval.unref()
+	monitorRunInFlight = true
+	try {
+		await runMonitorPass(client)
+	} catch (error) {
+		console.error("Thread length monitor pass failed:", error)
+	} finally {
+		monitorRunInFlight = false
 	}
 }

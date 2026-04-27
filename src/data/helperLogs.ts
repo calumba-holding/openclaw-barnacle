@@ -1,5 +1,5 @@
 import { and, desc, eq, gte, lte, sql } from "drizzle-orm"
-import { db } from "../db.js"
+import { getDb } from "../db.js"
 import { helperEvents, trackedThreads } from "../db/schema.js"
 
 type GenericWorkerEventPayload = {
@@ -169,7 +169,7 @@ export const normalizeEventPayload = (
 }
 
 export const insertEvent = async (normalizedEvent: NormalizedEvent) => {
-	await db.insert(helperEvents).values(normalizedEvent)
+	await getDb().insert(helperEvents).values(normalizedEvent)
 }
 
 export const listEvents = async ({
@@ -181,6 +181,7 @@ export const listEvents = async ({
 	to,
 	limit = 100
 }: EventFilters = {}) => {
+	const db = getDb()
 	const filters = []
 
 	if (eventType) {
@@ -229,6 +230,7 @@ export const listEvents = async ({
 }
 
 export const upsertTrackedThread = async (payload: ThreadUpsertPayload) => {
+	const db = getDb()
 	const threadId = asStringOrNull(payload.threadId)
 	if (!threadId) {
 		return { error: "threadId is required", status: 400 as const }
@@ -278,6 +280,7 @@ export const listTrackedThreads = async ({
 	closed,
 	limit = 100
 }: ThreadFilters = {}) => {
+	const db = getDb()
 	const filters = []
 
 	if (threadId) {

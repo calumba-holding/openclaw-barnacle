@@ -1,13 +1,7 @@
-import {
-	type Client,
-	ReadyListener,
-	type ListenerEventData
-} from "@buape/carbon"
-import { startThreadLengthMonitor } from "../services/threadLengthMonitor.js"
+import { ReadyListener, type ListenerEventData } from "@buape/carbon"
 
 export default class Ready extends ReadyListener {
-	async handle(data: ListenerEventData[this["type"]], client: Client) {
+	async handle(data: ListenerEventData[this["type"]]) {
 		console.log(`Logged in as ${data.user.username}`)
-		startThreadLengthMonitor(client)
 	}
 }

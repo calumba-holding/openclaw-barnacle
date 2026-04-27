@@ -12,9 +12,7 @@ import {
 import BaseCommand from "./base.js"
 import { sendWorkerEvent } from "../utils/workerEvent.js"
 
-const answerOverflowBaseUrl = (
-	process.env.ANSWER_OVERFLOW_API_BASE_URL ?? "https://www.answeroverflow.com"
-).replace(/\/+$/, "")
+const answerOverflowBaseUrl = "https://www.answeroverflow.com"
 
 type MarkSolutionResponse = {
 	success?: boolean

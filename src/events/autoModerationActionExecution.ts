@@ -8,7 +8,7 @@ import {
 	serializePayload,
 	type MessagePayloadObject
 } from "@buape/carbon"
-import { readFile } from "node:fs/promises"
+import automodMessages from "../config/automod-messages.js"
 
 type AutomodRuleConfig = {
 	trigger: string
@@ -32,20 +32,13 @@ type WebhookSendPayload = MessagePayloadObject & {
 	avatar_url?: string
 }
 
-const automodMessagesUrl = new URL("../config/automod-messages.json", import.meta.url)
 const webhookCache = new Map<string, WebhookCacheEntry>()
 const webhookCacheTtlMs = 15 * 60 * 1000
 
 const normalizeKeyword = (keyword: string) => keyword.trim().toLowerCase()
 
 const loadAutomodMessages = async (): Promise<AutomodMessageMap> => {
-	try {
-		const raw = await readFile(automodMessagesUrl, "utf8")
-		return JSON.parse(raw) as AutomodMessageMap
-	} catch (error) {
-		console.error("Failed to load automod messages:", error)
-		return {}
-	}
+	return automodMessages as AutomodMessageMap
 }
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
