@@ -25,7 +25,8 @@ const gateway = new CloudflareGatewayPlugin({
 		GatewayIntents.GuildMessages |
 		GatewayIntents.MessageContent |
 		GatewayIntents.AutoModerationExecution,
-	autoInteractions: true
+	autoInteractions: false,
+	durableObjectName: "hermit-main-v2"
 })
 
 export const client = new Client(
