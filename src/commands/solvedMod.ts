@@ -38,12 +38,12 @@ type MarkSolutionWorkerEvent = {
 }
 
 const isThreadLikeChannel = (
-	channel: CommandInteraction["channel"]
-): channel is GuildThreadChannel<any, true> =>
+	channel: unknown
+): channel is GuildThreadChannel<any, false> =>
 	Boolean(
 		channel &&
-			typeof (channel as GuildThreadChannel<any, true>).archive === "function" &&
-			typeof (channel as GuildThreadChannel<any, true>).lock === "function"
+			typeof (channel as GuildThreadChannel<any, false>).archive === "function" &&
+			typeof (channel as GuildThreadChannel<any, false>).lock === "function"
 	)
 
 const addCheckmarkReaction = async (interaction: CommandInteraction) => {
@@ -70,7 +70,10 @@ export default class SolvedModCommand extends BaseCommand {
 
 	async run(interaction: CommandInteraction) {
 		const targetMessage = interaction.targetMessage
-		const channel = interaction.channel
+		const channelId = interaction.rawData.channel_id ?? interaction.channel?.id
+		const channel = channelId
+			? await interaction.client.fetchChannel(channelId).catch(() => null)
+			: null
 		const apiKey = process.env.ANSWER_OVERFLOW_API_KEY
 
 		if (!targetMessage) {

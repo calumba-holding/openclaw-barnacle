@@ -3,7 +3,9 @@ import { insertEvent, normalizeEventPayload } from "../data/helperLogs.js"
 
 type ThreadStatsChannel = {
 	id?: string
+	message_count?: number
 	messageCount?: number
+	total_message_sent?: number
 	totalMessageSent?: number
 }
 
@@ -67,10 +69,15 @@ export const sendWorkerEvent = async <TData>(
 	type: string,
 	data: TData
 ) => {
-	const channel = interaction.channel as ThreadStatsChannel | null
+	const rawChannel = interaction.rawData.channel as ThreadStatsChannel | undefined
+	const channelId = interaction.rawData.channel_id ?? rawChannel?.id ?? null
 	const user = interaction.user
 	const messageCount =
-		channel?.totalMessageSent ?? channel?.messageCount ?? null
+		rawChannel?.total_message_sent ??
+		rawChannel?.totalMessageSent ??
+		rawChannel?.message_count ??
+		rawChannel?.messageCount ??
+		null
 	await postWorkerEvent({
 		type,
 		invokedBy: {
@@ -79,9 +86,9 @@ export const sendWorkerEvent = async <TData>(
 			globalName: user?.globalName ?? null
 		},
 		context: {
-			guildId: interaction.guild?.id ?? null,
-			channelId: interaction.channel?.id ?? null,
-			threadId: channel?.id ?? null,
+			guildId: interaction.rawData.guild_id ?? null,
+			channelId,
+			threadId: channelId,
 			messageCount
 		},
 		data

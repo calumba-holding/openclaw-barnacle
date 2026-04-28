@@ -17,12 +17,12 @@ const closeThreadMessage =
 	"This thread has gotten very long and spanned multiple topics which will make future reading difficult. This thread is now closed. Please create a new thread for any new topics."
 
 const isThreadLikeChannel = (
-	channel: CommandInteraction["channel"]
-): channel is GuildThreadChannel<any, true> =>
+	channel: unknown
+): channel is GuildThreadChannel<any, false> =>
 	Boolean(
 		channel &&
-			typeof (channel as GuildThreadChannel<any, true>).archive === "function" &&
-			typeof (channel as GuildThreadChannel<any, true>).lock === "function"
+			typeof (channel as GuildThreadChannel<any, false>).archive === "function" &&
+			typeof (channel as GuildThreadChannel<any, false>).lock === "function"
 	)
 
 class HelperWarnNewThreadCommand extends BaseCommand {
@@ -93,28 +93,32 @@ const closeHelperThread = async (
 	interaction: CommandInteraction,
 	commandName: string
 ) => {
-		const channel = interaction.channel
-		await sendWorkerEvent(interaction, "helper_command", {
-			command: commandName
-		})
+	const channelId = interaction.rawData.channel_id ?? interaction.channel?.id
+	const channel = channelId
+		? await interaction.client.fetchChannel(channelId).catch(() => null)
+		: null
 
-		if (!isThreadLikeChannel(channel)) {
-			await interaction.reply({
-				components: [
-					new Container([
-						new TextDisplay("This command can only be used inside a thread.")
-					])
-				]
-			})
-			return
-		}
+	await sendWorkerEvent(interaction, "helper_command", {
+		command: commandName
+	})
 
+	if (!isThreadLikeChannel(channel)) {
 		await interaction.reply({
-			components: [new Container([new TextDisplay(closeThreadMessage)])]
+			components: [
+				new Container([
+					new TextDisplay("This command can only be used inside a thread.")
+				])
+			]
 		})
+		return
+	}
 
-		await channel.archive()
-		await channel.lock()
+	await interaction.reply({
+		components: [new Container([new TextDisplay(closeThreadMessage)])]
+	})
+
+	await channel.archive()
+	await channel.lock()
 }
 
 export default class HelperRootCommand extends CommandWithSubcommands {
