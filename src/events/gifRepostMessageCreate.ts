@@ -137,7 +137,7 @@ const canEmbedLinksInChannel = async (
 
 export default class GifRepostMessageCreate extends MessageCreateListener {
 	async handle(data: ListenerEventData[this["type"]], client: Client) {
-		if (!data.channel_id || data.channel_id === gifRepostLogChannelId) {
+		if (!data.channel_id) {
 			return
 		}
 		if (data.webhook_id || data.author.bot) {
