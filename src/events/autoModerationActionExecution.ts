@@ -4,11 +4,10 @@ import {
 	type ListenerEventData,
 	ListenerEvent,
 	Routes,
-	Webhook,
-	serializePayload,
-	type MessagePayloadObject
+	serializePayload
 } from "@buape/carbon"
 import automodMessages from "../config/automod-messages.js"
+import { getOrCreateChannelWebhook, sendWebhookMessage } from "../utils/channelWebhook.js"
 
 type AutomodRuleConfig = {
 	trigger: string
@@ -21,19 +20,6 @@ type AutomodMessageMap = Record<string, AutomodRuleConfig | AutomodRuleConfig[]>
 
 type AutoModerationActionExecutionData =
 	ListenerEventData[typeof ListenerEvent.AutoModerationActionExecution]
-
-type WebhookCacheEntry = {
-	webhook: Webhook
-	fetchedAt: number
-}
-
-type WebhookSendPayload = MessagePayloadObject & {
-	username?: string
-	avatar_url?: string
-}
-
-const webhookCache = new Map<string, WebhookCacheEntry>()
-const webhookCacheTtlMs = 15 * 60 * 1000
 
 const normalizeKeyword = (keyword: string) => keyword.trim().toLowerCase()
 
@@ -49,64 +35,12 @@ const formatAutomodMessage = (template: string, data: AutoModerationActionExecut
 		.replaceAll("{keyword}", data.matched_keyword ?? "")
 		.replaceAll("{content}", data.matched_content ?? data.content ?? "")
 
-const cleanupWebhookCache = () => {
-	const now = Date.now()
-	for (const [channelId, entry] of webhookCache.entries()) {
-		if (now - entry.fetchedAt > webhookCacheTtlMs) {
-			webhookCache.delete(channelId)
-		}
-	}
-}
-
-const fetchChannelWebhooks = async (client: Client, channelId: string) => {
-	return (await client.rest.get(Routes.channelWebhooks(channelId))) as {
-		id: string
-		token?: string
-	}[]
-}
-
-const createChannelWebhook = async (client: Client, channelId: string) => {
-	return (await client.rest.post(Routes.channelWebhooks(channelId), {
-		body: { name: "Hermit Automod" }
-	})) as { id: string; token?: string }
-}
-
-const getOrCreateWebhook = async (client: Client, channelId: string) => {
-	cleanupWebhookCache()
-	const cached = webhookCache.get(channelId)
-	if (cached) {
-		return cached.webhook
-	}
-
-	const existingWebhooks = await fetchChannelWebhooks(client, channelId)
-	const usableWebhook = existingWebhooks.find((webhook) => webhook.token)
-	const webhookData = usableWebhook ?? (await createChannelWebhook(client, channelId))
-
-	if (!webhookData.token) {
-		throw new Error("Webhook token missing for automod response")
-	}
-
-	const webhook = new Webhook({ id: webhookData.id, token: webhookData.token })
-	webhookCache.set(channelId, { webhook, fetchedAt: Date.now() })
-	return webhook
-}
-
 const resolveRuleConfig = (
 	rules: AutomodRuleConfig | AutomodRuleConfig[],
 	matchedKeyword: string
 ) => {
 	const ruleList = Array.isArray(rules) ? rules : [rules]
 	return ruleList.find((rule) => normalizeKeyword(rule.trigger) === matchedKeyword)
-}
-
-const sendWebhookMessage = async (webhook: Webhook, payload: WebhookSendPayload) => {
-	const serialized = serializePayload({
-		...payload,
-		allowedMentions: { parse: [] }
-	})
-	await webhook.rest.post(webhook.urlWithOptions({ wait: true }), {
-		body: serialized
-	})
 }
 
 const resolveMember = async (data: AutoModerationActionExecutionData) => {
@@ -167,7 +101,7 @@ export default class AutoModerationActionExecution extends AutoModerationActionE
 		})
 
 		try {
-			const webhook = await getOrCreateWebhook(client, data.channel_id)
+			const webhook = await getOrCreateChannelWebhook(client, data.channel_id, "Hermit Automod")
 			const member = await resolveMember(data)
 			const displayName =
 				member?.nickname ||
