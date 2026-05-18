@@ -26,7 +26,9 @@ export const client = new Client(
 		baseUrl: process.env.BASE_URL,
 		deploySecret: process.env.DEPLOY_SECRET,
 		clientId: process.env.DISCORD_CLIENT_ID,
-		publicKey: process.env.DISCORD_PUBLIC_KEY,
+		publicKey: process.env.FORWARDER_PUBLIC_KEY
+			? [process.env.DISCORD_PUBLIC_KEY, process.env.FORWARDER_PUBLIC_KEY]
+			: process.env.DISCORD_PUBLIC_KEY,
 		token: process.env.DISCORD_BOT_TOKEN,
 		autoDeploy: true,
 		devGuilds: process.env.DISCORD_DEV_GUILDS?.split(",")
@@ -86,6 +88,7 @@ declare global {
 			HELPER_THREAD_WELCOME_TEMPLATE?: string;
 			THREAD_LENGTH_CHECK_INTERVAL_HOURS?: string;
 			DISCORD_CLIENT_SECRET?: string;
+			FORWARDER_PUBLIC_KEY?: string;
 		}
 	}
 }
