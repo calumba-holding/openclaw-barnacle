@@ -100,11 +100,7 @@ const formatLabels = (labels: string[]) => {
 		return "No key signals"
 	}
 
-	const shown = labels.slice(0, 4).map(formatLabel)
-	if (labels.length > shown.length) {
-		shown.push(`+${labels.length - shown.length} more`)
-	}
-	return shown.join(" • ")
+	return labels.map(formatLabel).join(" • ")
 }
 
 const stripMarkdown = (text: string) =>
