@@ -33,7 +33,7 @@ export type GitHubSummaryData = {
 	state: string
 	isPullRequest: boolean
 	merged: boolean
-	summary: string
+	summary: string | null
 	labels: string[]
 }
 
@@ -81,6 +81,14 @@ const isDuplicateSummary = (title: string, summary: string) => {
 		normalizedSummary.includes(normalizedTitle)
 }
 
+const hasUsefulBody = (title: string, body: string) => {
+	const normalizedTitle = normalizeText(title)
+	const normalizedBody = normalizeText(body)
+	return normalizedBody.length > normalizedTitle.length + 80 &&
+		!normalizedTitle.includes(normalizedBody) &&
+		!normalizedBody.startsWith(normalizedTitle)
+}
+
 const formatLabel = (label: string) => {
 	if (label.startsWith("issue-rating: ")) {
 		return label.slice("issue-rating: ".length)
@@ -124,8 +132,9 @@ const stripMarkdown = (text: string) =>
 		.trim()
 
 const openAiSummary = async (title: string, body: string | null | undefined) => {
+	const bodyText = stripMarkdown(body ?? "")
 	const apiKey = process.env.OPENAI_API_KEY
-	if (!apiKey) {
+	if (!apiKey || !hasUsefulBody(title, bodyText)) {
 		return null
 	}
 
@@ -141,11 +150,11 @@ const openAiSummary = async (title: string, body: string | null | undefined) => 
 				input: [
 					{
 						role: "system",
-						content: "Summarize GitHub issues or pull requests in 1-2 concise sentences, <=220 characters. No markdown."
+						content: "Summarize only details that are not already in the title. If the body adds no useful context, return EMPTY. Otherwise use <=180 characters, no markdown."
 					},
 					{
 						role: "user",
-						content: `Title: ${title}\n\nBody: ${stripMarkdown(body ?? "").slice(0, 4000)}`
+						content: `Title: ${title}\n\nBody: ${bodyText.slice(0, 4000)}`
 					}
 				],
 				max_output_tokens: 90
@@ -160,7 +169,11 @@ const openAiSummary = async (title: string, body: string | null | undefined) => 
 			output_text?: string
 			output?: Array<{ content?: Array<{ text?: string }> }>
 		}
-		return data.output_text ?? data.output?.flatMap((item) => item.content ?? []).map((item) => item.text).find(Boolean) ?? null
+		const summary = data.output_text ?? data.output?.flatMap((item) => item.content ?? []).map((item) => item.text).find(Boolean) ?? null
+		if (!summary || normalizeText(summary) === "empty" || isDuplicateSummary(title, summary)) {
+			return null
+		}
+		return summary
 	} catch {
 		return null
 	}
@@ -227,8 +240,8 @@ export const fetchGitHubSummaryData = async (
 	const issue = await response.json() as GitHubIssue
 	const labels = issue.labels?.flatMap((label) => label.name ? [label.name] : []) ?? []
 	const title = issue.title ?? "Untitled"
-	const summaryText = (await openAiSummary(title, issue.body)) ?? stripMarkdown(title)
-	const summary = truncateText(summaryText || "No summary.", 220)
+	const summaryText = await openAiSummary(title, issue.body)
+	const summary = summaryText ? truncateText(summaryText, 180) : null
 
 	return {
 		repoName: `${owner}/${repo}`,
@@ -245,9 +258,9 @@ export const fetchGitHubSummaryData = async (
 
 export const buildGitHubSummaryContainer = (data: GitHubSummaryData) => {
 	const type = data.isPullRequest ? "PR" : "Issue"
-	const details = isDuplicateSummary(data.title, data.summary)
-		? `_${formatLabels(data.labels)}_`
-		: `${truncateText(data.summary, 140)}\n_${formatLabels(data.labels)}_`
+	const details = data.summary
+		? `${truncateText(data.summary, 140)}\n_${formatLabels(data.labels)}_`
+		: `_${formatLabels(data.labels)}_`
 
 	return new Container(
 		[
