@@ -3,6 +3,7 @@ import { createHandler } from "@buape/carbon/adapters/fetch"
 import AdminCommand from "./commands/admin.js"
 import ClaimCommand from "./commands/claim.js"
 import GithubCommand from "./commands/github.js"
+import MaintainerCommand from "./commands/maintainer.js"
 import HelperRootCommand from "./commands/helper.js"
 import RoleCommand from "./commands/role.js"
 import SayRootCommand from "./commands/say.js"
@@ -10,8 +11,10 @@ import SolvedModCommand from "./commands/solvedMod.js"
 import AutoModerationActionExecution from "./events/autoModerationActionExecution.js"
 import AutoPublishMessageCreate from "./events/autoPublishMessageCreate.js"
 import GifRepostMessageCreate from "./events/gifRepostMessageCreate.js"
+import GithubSummaryReactionAdd from "./events/githubSummaryReactionAdd.js"
 import Ready from "./events/ready.js"
 import ThreadCreateWelcome from "./events/threadCreateWelcome.js"
+import { fscRequestComponents } from "./components/fscRequestButtons.js"
 import { hydrateRuntimeEnv, type HermitEnv } from "./runtime/env.js"
 import {
 	claimReviewComponents,
@@ -42,16 +45,18 @@ export const client = new Client(
 			new RoleCommand(),
 			new HelperRootCommand(),
 			new ClaimCommand(),
+			new MaintainerCommand(),
 			new AdminCommand()
 		],
 		listeners: [
 			new AutoModerationActionExecution(),
 			new AutoPublishMessageCreate(),
 			new GifRepostMessageCreate(),
+			new GithubSummaryReactionAdd(),
 			new ThreadCreateWelcome(),
 			new Ready()
 		],
-		components: claimReviewComponents,
+		components: [...claimReviewComponents, ...fscRequestComponents],
 		modals: claimReviewModals
 	}
 )
@@ -117,6 +122,7 @@ declare global {
 			THREAD_LENGTH_CHECK_INTERVAL_HOURS?: string;
 			DISCORD_CLIENT_SECRET?: string;
 			FORWARDER_PUBLIC_KEY?: string;
+			OPENAI_API_KEY?: string;
 		}
 	}
 }

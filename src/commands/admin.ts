@@ -13,6 +13,7 @@ import {
 	type ApplicationCommandOptionAllowedChannelType
 } from "@buape/carbon"
 import BaseCommand from "./base.js"
+import { AdminFsc } from "./maintainer.js"
 
 const shadow = "439223656200273932"
 const trialModRoleId = "1474489940279820339"
@@ -45,6 +46,7 @@ export default class AdminCommand extends CommandWithSubcommandGroups {
 	permission = PermissionFlagsBits.Administrator
 	subcommandGroups = [
 		new TrialMod(),
+		new AdminFsc()
 	]
 	subcommands = [
 		new Say(),
