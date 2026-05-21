@@ -38,6 +38,7 @@ const client = new Client(
 			intents:
 				GatewayIntents.Guilds |
 				GatewayIntents.GuildMessages |
+				GatewayIntents.GuildMessageReactions |
 				GatewayIntents.MessageContent,
 			webhookUrl: `${BASE_URL}/events`,
 			privateKey: FORWARDER_PRIVATE_KEY
