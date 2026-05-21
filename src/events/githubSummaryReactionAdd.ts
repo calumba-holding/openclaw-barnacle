@@ -10,12 +10,26 @@ import {
 } from "../utils/githubSummary.js"
 
 const summaryEmojiId = "1478966151743672563"
+const debugChannelId = "1506880591340113990"
+
+const sendDebugLog = async (client: Client, message: string) => {
+	const channel = await client.fetchChannel(debugChannelId).catch(() => null)
+	if (channel && "send" in channel) {
+		await channel.send(message).catch(() => null)
+	}
+}
 
 export default class GithubSummaryReactionAdd extends MessageReactionAddListener {
 	async handle(data: ListenerEventData[this["type"]], client: Client) {
-		if (data.emoji.id !== summaryEmojiId || data.user.bot) {
+		if (data.user.bot) {
 			return
 		}
+		if (data.emoji.id !== summaryEmojiId) {
+			await sendDebugLog(client, `Ignored reaction ${data.emoji.name ?? "unknown"}:${data.emoji.id ?? "no-id"} on ${data.channel_id}/${data.message_id}`)
+			return
+		}
+
+		await sendDebugLog(client, `GitHub summary reaction by <@${data.user.id}> on https://discord.com/channels/${data.guild_id ?? "@me"}/${data.channel_id}/${data.message_id}`)
 
 		const message = data.message.partial ? await data.message.fetch() : data.message
 		const source = [
@@ -30,8 +44,10 @@ export default class GithubSummaryReactionAdd extends MessageReactionAddListener
 			.join("\n")
 		const matches = parseGitHubIssueUrls(source)
 		if (matches.length === 0) {
+			await sendDebugLog(client, `No GitHub links found for reacted message ${data.channel_id}/${data.message_id}`)
 			return
 		}
+		await sendDebugLog(client, `Found ${matches.length} GitHub link(s): ${matches.map((match) => `${match.owner}/${match.repo}#${match.number}`).join(", ")}`)
 
 		const summaries = (await Promise.all(
 			matches.map((match) =>
@@ -39,6 +55,7 @@ export default class GithubSummaryReactionAdd extends MessageReactionAddListener
 			)
 		)).filter((summary) => summary !== null)
 		if (summaries.length === 0) {
+			await sendDebugLog(client, `No GitHub summaries fetched for reacted message ${data.channel_id}/${data.message_id}`)
 			return
 		}
 
@@ -47,6 +64,9 @@ export default class GithubSummaryReactionAdd extends MessageReactionAddListener
 			await channel.send({
 				components: summaries.map(buildGitHubSummaryContainer)
 			})
+			await sendDebugLog(client, `Sent ${summaries.length} GitHub summary container(s) in <#${data.channel_id}>`)
+		} else {
+			await sendDebugLog(client, `Could not fetch/send in channel ${data.channel_id}`)
 		}
 	}
 }
