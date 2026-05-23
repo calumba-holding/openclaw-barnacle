@@ -39,10 +39,32 @@ const appealFields = [
 
 export const formConfigs = [
 	{
-		id: "discord",
+		id: "discord-ban",
 		title: "Discord Ban Appeal",
-		description: "Request a Discord ban or mute review.",
+		description: "Request a Discord ban review.",
 		auth: "discord",
+		requiredAction: "banned",
+		reviewChannelId,
+		successMessage: "Submitted.",
+		fields: appealFields,
+		actions: {
+			accept: [
+				{
+					type: "discord.resolveAppeal",
+					guildId: discordGuildId,
+					target: "authUser",
+					reason: "Appeal accepted."
+				}
+			],
+			deny: []
+		}
+	},
+	{
+		id: "discord-mute",
+		title: "Discord Mute Appeal",
+		description: "Request a Discord mute review.",
+		auth: "discord",
+		requiredAction: "muted",
 		reviewChannelId,
 		successMessage: "Submitted.",
 		fields: appealFields,
@@ -63,6 +85,7 @@ export const formConfigs = [
 		title: "GitHub Ban Appeal",
 		description: "Request a GitHub ban review.",
 		auth: "github",
+		requiredAction: "banned",
 		reviewChannelId,
 		successMessage: "Submitted.",
 		fields: appealFields,
@@ -82,6 +105,7 @@ export const formConfigs = [
 		title: "Reddit Ban Appeal",
 		description: "Request a Reddit ban review.",
 		auth: "reddit",
+		requiredAction: "banned",
 		reviewChannelId,
 		successMessage: "Submitted.",
 		fields: appealFields,

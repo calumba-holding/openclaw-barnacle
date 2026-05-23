@@ -40,7 +40,7 @@ const applicantName = (submission: FormSubmission) =>
 
 const titleFor = (form: FormConfig, submission: FormSubmission) => {
 	const payload = parseSubmissionPayload(submission)
-	if (form.id === "discord") {
+	if ((form.id === "discord-ban" || form.id === "discord-mute")) {
 		return `${payload.punishment || "Discord"} Appeal sent by @${applicantName(submission)}`
 	}
 	if (form.id === "github") {
@@ -54,7 +54,7 @@ const titleFor = (form: FormConfig, submission: FormSubmission) => {
 
 const detailLinesFor = (form: FormConfig, submission: FormSubmission) => {
 	const payload = parseSubmissionPayload(submission)
-	if (form.id === "discord") {
+	if ((form.id === "discord-ban" || form.id === "discord-mute")) {
 		return [
 			`- **ID:** ${submission.applicantId ?? "Unknown"}`,
 			`- **Punishment:** ${payload.punishment || "Unknown"}`,
@@ -94,7 +94,7 @@ const answerLinesFor = (form: FormConfig, submission: FormSubmission) => {
 	return form.fields
 		.filter((field) => field.type !== "autofill")
 		.filter((field) => {
-			if (form.id === "discord") {
+			if ((form.id === "discord-ban" || form.id === "discord-mute")) {
 				return ![
 					"caseId",
 					"duration",

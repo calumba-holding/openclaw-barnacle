@@ -71,18 +71,17 @@ const latestDiscordTimeout = async (userId: string) => {
 	}
 }
 
-const latestDiscordContext = async (user: { id: string; username: string }) =>
-	await latestDiscordBan(user.id) ?? await latestDiscordTimeout(user.id) ?? {
-		action: "moderated",
-		unaction: "reviewed",
-		punishment: "Unknown",
-		duration: notAvailable,
-		banReason: noListedReason,
-		moderationReason: "No active ban or timeout found.",
-		caseId: notAvailable,
-		moderator: notAvailable,
-		account: user.username
-	}
+const emptyDiscordContext = (user: { username: string }, message: string) => ({
+	action: "moderated",
+	unaction: "reviewed",
+	punishment: "Unknown",
+	duration: notAvailable,
+	banReason: noListedReason,
+	moderationReason: message,
+	caseId: notAvailable,
+	moderator: notAvailable,
+	account: user.username
+})
 
 const latestGitHubContext = async (username: string) => {
 	const org = formSettings.githubOrg
@@ -122,8 +121,11 @@ export const fetchFormContext = async (
 	form: FormConfig,
 	user: { id: string; username: string }
 ) => {
-	if (form.id === "discord") {
-		return latestDiscordContext(user)
+	if (form.id === "discord-ban") {
+		return await latestDiscordBan(user.id) ?? emptyDiscordContext(user, "No active Discord ban found.")
+	}
+	if (form.id === "discord-mute") {
+		return await latestDiscordTimeout(user.id) ?? emptyDiscordContext(user, "No active Discord mute found.")
 	}
 	if (form.id === "github") {
 		return latestGitHubContext(user.username)

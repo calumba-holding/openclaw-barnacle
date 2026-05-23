@@ -33,11 +33,14 @@ export type FormAuthProvider = "discord" | "github" | "reddit"
 
 export type FormTarget = "authUser" | "authUsername" | string
 
+export type ModerationAction = "banned" | "muted" | "moderated"
+
 export type FormConfig = {
 	id: string
 	title: string
 	description: string
 	auth: FormAuthProvider | FormAuthProvider[]
+	requiredAction?: Exclude<ModerationAction, "moderated">
 	reviewChannelId: string
 	successMessage: string
 	fields: FormField[]

@@ -83,7 +83,22 @@ const collectPayload = async (request: Request) => {
 	return { payload, session: String(body.get("session") ?? "") }
 }
 
+const actionLabel = (action: string) => {
+	if (action === "banned") return "ban"
+	if (action === "muted") return "mute"
+	return "moderation action"
+}
+
+const eligibilityError = (form: FormConfig, values: Record<string, string>) =>
+	form.requiredAction && values.action !== form.requiredAction
+		? `No active ${actionLabel(form.requiredAction)} found for this account.`
+		: null
+
 const validatePayload = (form: FormConfig, payload: Record<string, string>, values: Record<string, string>) => {
+	const eligibility = eligibilityError(form, values)
+	if (eligibility) {
+		return eligibility
+	}
 	for (const field of form.fields) {
 		if (field.type === "autofill") {
 			continue
@@ -226,13 +241,17 @@ const handleFormGet = async (request: Request, form: FormConfig) => {
 	if (!user) {
 		const providers = getFormAuthProviders(form)
 		if (providers.length === 1) {
-			return Response.redirect(`/oauth/${providers[0]}/start?form=${encodeURIComponent(form.id)}`, 302)
+			return Response.redirect(`${getOrigin(request)}/oauth/${providers[0]}/start?form=${encodeURIComponent(form.id)}`, 302)
 		}
 		return new Response(renderPage(form.title, <AuthGateRoute form={form} />), { headers: { "content-type": "text/html; charset=utf-8" } })
 	}
 	const values = Object.fromEntries(
 		Object.entries(await fetchFormContext(form, user)).map(([key, value]) => [key, String(value ?? "")])
 	)
+	const error = eligibilityError(form, values)
+	if (error) {
+		return new Response(renderResultPage(form.title, error, false), { status: 403, headers: { "content-type": "text/html; charset=utf-8" } })
+	}
 	return new Response(renderPage(form.title, <FormRoute form={form} session={session ?? "local"} user={user} values={values} />), { headers: { "content-type": "text/html; charset=utf-8" } })
 }
 
@@ -326,7 +345,7 @@ const startOAuth = async (request: Request, provider: FormAuthProvider) => {
 	if (isFormsDev()) {
 		const user = localUsers[provider]
 		const session = await createSession({ formId: form.id, provider: user.provider, id: user.id, username: user.username })
-		return Response.redirect(`/${form.id}?session=${encodeURIComponent(session)}`, 302)
+		return Response.redirect(`${getOrigin(request)}/${form.id}?session=${encodeURIComponent(session)}`, 302)
 	}
 	const origin = getOrigin(request)
 	const state = await createOAuthState(form.id, origin, provider)
