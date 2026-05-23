@@ -71,6 +71,8 @@ const detailLinesFor = (form: FormConfig, submission: FormSubmission) => {
 			`- **GitHub ID:** ${submission.applicantId ?? "Unknown"}`,
 			`- **Scope:** ${payload.scope || "Unknown"}`,
 			`- **Reason:** ${payload.banReason || "Not provided"}`,
+			`- **Moderator:** ${payload.moderator || "Not provided"}`,
+			`- **Timestamp:** ${payload.timestamp || "Not provided"}`,
 			`- **Links:** ${payload.links || "Not provided"}`
 		]
 	}

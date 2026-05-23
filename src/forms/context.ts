@@ -150,6 +150,39 @@ const emptyDiscordContext = (user: { username: string }, message: string) => ({
 	account: user.username
 })
 
+type GitHubAuditEvent = {
+	action?: string
+	actor?: string
+	user?: string
+	blocked_user?: string
+	created_at?: string | number
+	"@timestamp"?: string | number
+}
+
+const auditTimestamp = (event: GitHubAuditEvent) => {
+	const value = event.created_at ?? event["@timestamp"]
+	if (typeof value === "number") {
+		return new Date(value).toISOString()
+	}
+	return value
+}
+
+const latestGitHubBlockAudit = async (org: string, username: string, headers: Record<string, string>) => {
+	const url = new URL(`${githubApiBase}/orgs/${encodeURIComponent(org)}/audit-log`)
+	url.searchParams.set("phrase", "action:org.block_user")
+	url.searchParams.set("per_page", "100")
+	const response = await fetch(url, { headers })
+	const events = response.ok ? await response.json() as GitHubAuditEvent[] : []
+	const event = events.find((item) => {
+		const target = item.blocked_user ?? item.user
+		return item.action === "org.block_user" && target?.toLowerCase() === username.toLowerCase()
+	})
+	return event ? {
+		moderator: event.actor ?? notAvailable,
+		timestamp: auditTimestamp(event) ?? notAvailable
+	} : null
+}
+
 const latestGitHubContext = async (username: string) => {
 	const org = formSettings.githubOrg
 	const headers = await getGitHubHeaders()
@@ -157,11 +190,14 @@ const latestGitHubContext = async (username: string) => {
 		headers
 	})
 	const isBlocked = response.status === 204
+	const audit = isBlocked ? await latestGitHubBlockAudit(org, username, headers).catch(() => null) : null
 	return {
 		action: isBlocked ? "banned" : "moderated",
 		unaction: isBlocked ? "unbanned" : "reviewed",
 		githubUser: username,
 		banReason: isBlocked ? `Blocked by ${org}.` : noListedReason,
+		moderator: audit?.moderator ?? notAvailable,
+		timestamp: audit?.timestamp ?? notAvailable,
 		scope: `${org} organization`,
 		links: `https://github.com/${username}`
 	}

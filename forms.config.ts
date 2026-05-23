@@ -1,10 +1,12 @@
 import type { FormConfig, FormField } from "./src/forms/types.js"
 
-const reviewChannelId = "1467242758183059536"
-const shadowChannelId = "1464886408090226902"
-const discordGuildId = "1456350064065904867"
-const githubOrg = "openclaw"
-const redditSubreddit = "openclaw"
+export const formSettings = {
+	reviewChannelId: "1467242758183059536",
+	shadowChannelId: "1464886408090226902",
+	discordGuildId: "1456350064065904867",
+	githubOrg: "openclaw",
+	redditSubreddit: "openclaw"
+}
 
 /*
 
@@ -47,14 +49,14 @@ export const formConfigs = [
 		description: "Request a Discord ban review.",
 		auth: "discord",
 		requiredAction: "banned",
-		reviewChannelId,
+		reviewChannelId: formSettings.reviewChannelId,
 		successMessage: "Submitted.",
 		fields: appealFields,
 		actions: {
 			accept: [
 				{
 					type: "discord.resolveAppeal",
-					guildId: discordGuildId,
+					guildId: formSettings.discordGuildId,
 					target: "authUser",
 					reason: "Appeal accepted."
 				}
@@ -68,14 +70,14 @@ export const formConfigs = [
 		description: "Request a Discord mute review.",
 		auth: "discord",
 		requiredAction: "muted",
-		reviewChannelId,
+		reviewChannelId: formSettings.reviewChannelId,
 		successMessage: "Submitted.",
 		fields: appealFields,
 		actions: {
 			accept: [
 				{
 					type: "discord.resolveAppeal",
-					guildId: discordGuildId,
+					guildId: formSettings.discordGuildId,
 					target: "authUser",
 					reason: "Appeal accepted."
 				}
@@ -89,14 +91,14 @@ export const formConfigs = [
 		description: "Request a GitHub ban review.",
 		auth: "github",
 		requiredAction: "banned",
-		reviewChannelId,
+		reviewChannelId: formSettings.reviewChannelId,
 		successMessage: "Submitted.",
 		fields: appealFields,
 		actions: {
 			accept: [
 				{
 					type: "github.unblockOrgUser",
-					org: githubOrg,
+					org: formSettings.githubOrg,
 					target: "authUsername"
 				}
 			],
@@ -109,14 +111,14 @@ export const formConfigs = [
 		description: "Request a Reddit ban review.",
 		auth: "reddit",
 		requiredAction: "banned",
-		reviewChannelId,
+		reviewChannelId: formSettings.reviewChannelId,
 		successMessage: "Submitted.",
 		fields: appealFields,
 		actions: {
 			accept: [
 				{
 					type: "reddit.unbanSubredditUser",
-					subreddit: redditSubreddit,
+					subreddit: formSettings.redditSubreddit,
 					target: "authUsername",
 					reason: "Appeal accepted."
 				}
@@ -129,7 +131,7 @@ export const formConfigs = [
 		title: "Report a Moderator",
 		description: "Report moderator misconduct.",
 		auth: ["discord", "github", "reddit"],
-		reviewChannelId: shadowChannelId,
+		reviewChannelId: formSettings.shadowChannelId,
 		successMessage: "Submitted.",
 		fields: [
 			{
