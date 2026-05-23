@@ -12,3 +12,4 @@ These instructions apply to this repo.
 - Put shared Forms types in `src/forms/types.ts`; do not define config types in `forms.config.ts`.
 - Prefer React SSR for web pages; avoid hand-built HTML strings for substantial views.
 - For Discord review messages, use Carbon components/buttons instead of raw component payload objects.
+- Cloudflare Builds deploys `main`; do not manually run prod deploys unless explicitly asked. Push to `main` after verification and let Cloudflare deploy.
