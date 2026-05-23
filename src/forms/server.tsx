@@ -224,6 +224,10 @@ const handleFormGet = async (request: Request, form: FormConfig) => {
 	const session = new URL(request.url).searchParams.get("session")
 	const user = await readFormUser(request, form)
 	if (!user) {
+		const providers = getFormAuthProviders(form)
+		if (providers.length === 1) {
+			return Response.redirect(`/oauth/${providers[0]}/start?form=${encodeURIComponent(form.id)}`, 302)
+		}
 		return new Response(renderPage(form.title, <AuthGateRoute form={form} />), { headers: { "content-type": "text/html; charset=utf-8" } })
 	}
 	const values = Object.fromEntries(
