@@ -27,7 +27,7 @@ import {
 const discordApiBase = "https://discord.com/api/v10"
 const githubApiBase = "https://api.github.com"
 const redditApiBase = "https://oauth.reddit.com"
-const formHosts = new Set(["appeal.openclaw.ai", "forms.openclaw.ai"])
+const formHosts = new Set(["appeals.openclaw.ai", "forms.openclaw.ai"])
 const localUsers: Record<FormAuthProvider, { id: string; username: string; provider: FormAuthProvider }> = {
 	discord: { id: "679604208940351488", username: "peetiegonzalez", provider: "discord" },
 	github: { id: "123456", username: "thewilloftheshadow", provider: "github" },
@@ -64,7 +64,7 @@ const getRequestOrigin = (request: Request) => {
 }
 
 const getCanonicalOrigin = () =>
-	process.env.FORMS_BASE_URL?.replace(/\/$/, "") || "https://appeal.openclaw.ai"
+	process.env.FORMS_BASE_URL?.replace(/\/$/, "") || "https://appeals.openclaw.ai"
 
 const getOrigin = (request: Request) =>
 	process.env.FORMS_BASE_URL?.replace(/\/$/, "") || getRequestOrigin(request)

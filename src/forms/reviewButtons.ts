@@ -8,6 +8,8 @@ import {
 	Modal,
 	type ModalInteraction,
 	Row,
+	Section,
+	Separator,
 	TextDisplay,
 	TextInput,
 	TextInputStyle
@@ -52,44 +54,73 @@ const titleFor = (form: FormConfig, submission: FormSubmission) => {
 	return `${form.title} sent by @${applicantName(submission)}`
 }
 
-const detailLinesFor = (form: FormConfig, submission: FormSubmission) => {
+const dateTimestamp = (value?: string) => {
+	const match = value?.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:?\d{2})?/)
+	if (!match) {
+		return null
+	}
+	const date = new Date(match[0].replace(/\.(\d{3})\d+/, ".$1"))
+	return Number.isNaN(date.getTime()) ? null : Math.floor(date.getTime() / 1000)
+}
+
+const formatDuration = (value?: string) => {
+	if (!value) {
+		return "Not provided"
+	}
+	const timestamp = dateTimestamp(value)
+	if (!timestamp) {
+		return value
+	}
+	return `${value.trim().toLowerCase().startsWith("until") ? "Until " : ""}<t:${timestamp}:f> (<t:${timestamp}:R>)`
+}
+
+const detailField = (label: string, value?: string | null) => `**${label}:** ${value || "Not provided"}`
+
+const detailComponentsFor = (form: FormConfig, submission: FormSubmission) => {
 	const payload = parseSubmissionPayload(submission)
 	if ((form.id === "discord-ban" || form.id === "discord-mute")) {
 		return [
-			`- **ID:** ${submission.applicantId ?? "Unknown"}`,
-			`- **Punishment:** ${payload.punishment || "Unknown"}`,
-			`- **Case ID:** ${payload.caseId || "Not provided"}`,
-			...(payload.timestamp ? [`- **Timestamp:** ${payload.timestamp}`] : []),
-			`- **Reason:** ${payload.banReason || payload.moderationReason || "Not provided"}`,
-			`- **Duration:** ${payload.duration || "Not provided"}`,
-			`- **Moderator:** ${payload.moderator || "Not provided"}`
+			new Section(
+				[new TextDisplay(detailField("ID", submission.applicantId ?? "Unknown"))],
+				new FormReviewCopyButton(submission.id, "applicantId", "Copy ID")
+			),
+			new Section(
+				[new TextDisplay(detailField("Case ID", payload.caseId))],
+				new FormReviewCopyButton(submission.id, "caseId", "Copy Case ID")
+			),
+			new TextDisplay([
+				...(payload.timestamp ? [detailField("Timestamp", payload.timestamp)] : []),
+				detailField("Reason", payload.banReason || payload.moderationReason),
+				detailField("Duration", formatDuration(payload.duration)),
+				detailField("Moderator", payload.moderator)
+			].join("\n"))
 		]
 	}
 	if (form.id === "github") {
-		return [
-			`- **GitHub user:** @${applicantName(submission)}`,
-			`- **GitHub ID:** ${submission.applicantId ?? "Unknown"}`,
-			`- **Scope:** ${payload.scope || "Unknown"}`,
-			`- **Reason:** ${payload.banReason || "Not provided"}`,
-			`- **Moderator:** ${payload.moderator || "Not provided"}`,
-			`- **Timestamp:** ${payload.timestamp || "Not provided"}`,
-			`- **Links:** ${payload.links || "Not provided"}`
-		]
+		return [new TextDisplay([
+			detailField("GitHub user", `@${applicantName(submission)}`),
+			detailField("GitHub ID", submission.applicantId ?? "Unknown"),
+			detailField("Scope", payload.scope || "Unknown"),
+			detailField("Reason", payload.banReason),
+			detailField("Moderator", payload.moderator),
+			detailField("Timestamp", payload.timestamp),
+			detailField("Links", payload.links)
+		].join("\n"))]
 	}
 	if (form.id === "reddit") {
-		return [
-			`- **Reddit user:** ${applicantName(submission)}`,
-			`- **Reddit ID:** ${submission.applicantId ?? "Unknown"}`,
-			`- **Scope:** ${payload.scope || "Unknown"}`,
-			`- **Reason:** ${payload.banReason || "Not provided"}`,
-			`- **Links:** ${payload.links || "Not provided"}`
-		]
+		return [new TextDisplay([
+			detailField("Reddit user", applicantName(submission)),
+			detailField("Reddit ID", submission.applicantId ?? "Unknown"),
+			detailField("Scope", payload.scope || "Unknown"),
+			detailField("Reason", payload.banReason),
+			detailField("Links", payload.links)
+		].join("\n"))]
 	}
-	return [
-		`- **Applicant:** @${applicantName(submission)}`,
-		`- **Auth:** ${submission.authProvider ?? "none"}`,
-		`- **Form ID:** ${form.id}`
-	]
+	return [new TextDisplay([
+		detailField("Applicant", `@${applicantName(submission)}`),
+		detailField("Auth", submission.authProvider ?? "none"),
+		detailField("Form ID", form.id)
+	].join("\n"))]
 }
 
 const answerLinesFor = (form: FormConfig, submission: FormSubmission) => {
@@ -140,8 +171,12 @@ export const buildFormReviewContainer = (
 	return new Container(
 		[
 			new TextDisplay(`## ${titleFor(form, submission)}`),
-			new TextDisplay(detailLinesFor(form, submission).join("\n")),
-			new TextDisplay([...answerLinesFor(form, submission), ...extra, footer].join("\n\n")),
+			...detailComponentsFor(form, submission),
+			new Separator({ divider: true, spacing: "small" }),
+			...answerLinesFor(form, submission).map((line) => new TextDisplay(line)),
+			...extra.map((line) => new TextDisplay(line)),
+			new Separator({ divider: false, spacing: "small" }),
+			new TextDisplay(`-# ${footer}`),
 			...(status === "submitted"
 				? [
 					new Row([
@@ -311,6 +346,44 @@ class FormReviewDecisionModal extends Modal {
 	}
 }
 
+class FormReviewCopyButton extends Button {
+	customId = "form-review-copy"
+	label = "Copy"
+	style = ButtonStyle.Secondary
+	ephemeral = true
+
+	constructor(id?: number, field = "applicantId", label = "Copy") {
+		super()
+		this.label = label
+		if (id) {
+			this.customId = `form-review-copy:id=${id};field=${field}`
+		}
+	}
+
+	async run(interaction: ButtonInteraction, data: Record<string, unknown>) {
+		if (typeof data.id !== "number") {
+			await interaction.reply({
+				components: [resultContainer("Missing value", "This copy button is missing submission data.", "#f85149")]
+			})
+			return
+		}
+		const submission = await getFormSubmission(data.id)
+		if (!submission) {
+			await interaction.reply({
+				components: [resultContainer("Missing value", "Could not load this form submission.", "#f85149")]
+			})
+			return
+		}
+		const payload = parseSubmissionPayload(submission)
+		const isCaseId = data.field === "caseId"
+		const name = isCaseId ? "Case ID" : "ID"
+		const value = isCaseId ? payload.caseId : submission.applicantId
+		await interaction.reply({
+			components: [resultContainer(name, value ? `\`${value}\`` : `${name} not found.`, value ? "#7bdc65" : "#f85149")]
+		})
+	}
+}
+
 export class FormReviewAcceptButton extends Button {
 	customId = "form-review-accept"
 	label = "Accept"
@@ -363,7 +436,8 @@ export class FormReviewDenyButton extends Button {
 
 export const formReviewComponents = [
 	new FormReviewAcceptButton(),
-	new FormReviewDenyButton()
+	new FormReviewDenyButton(),
+	new FormReviewCopyButton()
 ]
 
 export const formReviewModals = [new FormReviewDecisionModal()]
