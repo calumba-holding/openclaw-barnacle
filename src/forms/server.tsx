@@ -76,11 +76,9 @@ const jsonHeaders = () => ({
 
 const discordDmInstallUrl = () => {
 	const url = new URL(`${discordApiBase}/oauth2/authorize`)
-	url.searchParams.set("integration_type", "1")
-	url.searchParams.set("state", "close")
-	url.searchParams.set("scope", "applications.commands")
-	url.searchParams.set("response_type", "token")
 	url.searchParams.set("client_id", getRuntimeEnv().DISCORD_CLIENT_ID)
+	url.searchParams.set("integration_type", "1")
+	url.searchParams.set("scope", "applications.commands")
 	return url.toString()
 }
 

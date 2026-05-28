@@ -3,6 +3,7 @@ import {
 	type ButtonInteraction,
 	ButtonStyle,
 	type ComponentData,
+	ComponentType,
 	Container,
 	Label,
 	Modal,
@@ -150,6 +151,36 @@ const answerLinesFor = (form: FormConfig, submission: FormSubmission) => {
 		.map((field) => `**${renderFormText(field.label, payload)}**\n${payload[field.id] || "—"}`)
 }
 
+const reviewHistoryLine = (action: "Locked" | "Unlocked", userId?: string) =>
+	`${action} by <@${userId ?? "unknown"}> • <t:${Math.floor(Date.now() / 1000)}:f>`
+
+const historyLinesFrom = (components: unknown) => {
+	const lines: string[] = []
+	const read = (items: unknown) => {
+		if (!Array.isArray(items)) {
+			return
+		}
+		for (const component of items) {
+			if (!component || typeof component !== "object") {
+				continue
+			}
+			const item = component as { type?: unknown; content?: unknown; components?: unknown }
+			if (item.type === ComponentType.TextDisplay && typeof item.content === "string") {
+				lines.push(
+					...item.content
+						.replace(/^-#\s*/, "")
+						.split("\n")
+						.map((line) => line.trim())
+						.filter((line) => /^(Locked|Unlocked) by <@(?:\d+|unknown)> • <t:\d+:f>$/.test(line))
+				)
+			}
+			read(item.components)
+		}
+	}
+	read(components)
+	return lines
+}
+
 export const buildFormReviewContainer = (
 	form: FormConfig,
 	submission: FormSubmission,
@@ -158,17 +189,19 @@ export const buildFormReviewContainer = (
 		decidedById?: string | null
 		decisionReason?: string | null
 		actionResult?: string | null
+		historyLines?: string[]
 	} = {}
 ) => {
 	const status = options.status ?? "submitted"
 	const submittedAt = submission.createdAt ? Math.floor(new Date(submission.createdAt).getTime() / 1000) : Math.floor(Date.now() / 1000)
 	const decidedAt = Math.floor(Date.now() / 1000)
-	const footer = status === "submitted" || status === "locked"
-		? `Submitted • <t:${submittedAt}:f>`
-		: [
-			`Submitted • <t:${submittedAt}:f>`,
-			`${status === "accepted" ? "Accepted" : "Rejected"} by <@${options.decidedById ?? "unknown"}> • <t:${decidedAt}:f>`
-		].join("\n")
+	const footer = [
+		`Submitted • <t:${submittedAt}:f>`,
+		...(options.historyLines ?? []),
+		...(status === "accepted" || status === "denied"
+			? [`${status === "accepted" ? "Accepted" : "Rejected"} by <@${options.decidedById ?? "unknown"}> • <t:${decidedAt}:f>`]
+			: [])
+	].join("\n")
 	const extra = [
 		options.decisionReason ? `**Decision reason**\n${options.decisionReason}` : null,
 		options.actionResult ? `**Action result**\n${options.actionResult}` : null
@@ -290,7 +323,8 @@ const decide = async (
 				status,
 				decidedById: interaction.user?.id,
 				decisionReason: reason,
-				actionResult
+				actionResult,
+				historyLines: historyLinesFrom(interaction.message?.rawData.components)
 			})
 		],
 		allowedMentions: { parse: [] }
@@ -478,7 +512,15 @@ export class FormReviewLockButton extends Button {
 			return
 		}
 		await interaction.update({
-			components: [buildFormReviewContainer(loaded.form, locked, { status: "locked" })],
+			components: [
+				buildFormReviewContainer(loaded.form, locked, {
+					status: "locked",
+					historyLines: [
+						...historyLinesFrom(interaction.message?.rawData.components),
+						reviewHistoryLine("Locked", interaction.user?.id)
+					]
+				})
+			],
 			allowedMentions: { parse: [] }
 		})
 	}
@@ -538,7 +580,15 @@ export class FormReviewUnlockButton extends Button {
 			return
 		}
 		await interaction.update({
-			components: [buildFormReviewContainer(form, unlocked, { status: "submitted" })],
+			components: [
+				buildFormReviewContainer(form, unlocked, {
+					status: "submitted",
+					historyLines: [
+						...historyLinesFrom(interaction.message?.rawData.components),
+						reviewHistoryLine("Unlocked", interaction.user?.id)
+					]
+				})
+			],
 			allowedMentions: { parse: [] }
 		})
 	}
