@@ -88,6 +88,31 @@ const providerName = (provider: "discord" | "github" | "reddit") => {
 	return "Discord"
 }
 
+const submitDedupeScript = `
+document.addEventListener("submit", function (event) {
+	var form = event.target;
+	if (!(form instanceof HTMLFormElement) || !form.matches("[data-appeal-form]")) return;
+	if (form.dataset.submitting === "true") {
+		event.preventDefault();
+		return;
+	}
+	form.dataset.submitting = "true";
+	var button = form.querySelector("button[type='submit']");
+	if (!button) return;
+	button.disabled = true;
+	button.textContent = "Submitting…";
+});
+window.addEventListener("pageshow", function () {
+	document.querySelectorAll("[data-appeal-form]").forEach(function (form) {
+		form.dataset.submitting = "false";
+		var button = form.querySelector("button[type='submit']");
+		if (!button) return;
+		button.disabled = false;
+		button.textContent = "Submit";
+	});
+});
+`
+
 export const AuthGateRoute = ({ form, error }: { form: FormConfig; error?: string }) => (
 	<Card className="w-full">
 		<CardHeader>
@@ -125,11 +150,12 @@ export const FormRoute = ({
 			<CardDescription>Signed in as {user.username}</CardDescription>
 		</CardHeader>
 		<CardContent>
-			<form className="grid gap-4" method="post" action={`/${form.id}/submit`}>
+			<form className="grid gap-4" method="post" action={`/${form.id}/submit`} data-appeal-form>
 				<input type="hidden" name="session" value={session} />
 				{form.fields.map((field) => <Field field={field} key={field.id} values={values} />)}
 				<Button className="w-fit" type="submit">Submit</Button>
 			</form>
+			<script dangerouslySetInnerHTML={{ __html: submitDedupeScript }} />
 		</CardContent>
 	</Card>
 )

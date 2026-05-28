@@ -19,15 +19,20 @@ import type { FormConfig } from "./types.js"
 import {
 	getFormSubmission,
 	parseSubmissionPayload,
-	recordFormDecision
+	recordFormDecision,
+	recordFormLock,
+	recordFormUnlock
 } from "./submissions.js"
 import type { FormSubmission } from "../db/schema.js"
 import { runFormActions } from "./actions.js"
 
 const reasonInputId = "form-review-reason"
 const durationInputId = "form-review-duration"
+const reviewUnlockUserId = "439223656200273932"
 
-const statusColor = (status: "submitted" | "accepted" | "denied") => {
+type FormReviewStatus = "submitted" | "locked" | "accepted" | "denied"
+
+const statusColor = (status: FormReviewStatus) => {
 	if (status === "accepted") {
 		return "#7bdc65"
 	}
@@ -149,7 +154,7 @@ export const buildFormReviewContainer = (
 	form: FormConfig,
 	submission: FormSubmission,
 	options: {
-		status?: "submitted" | "accepted" | "denied"
+		status?: FormReviewStatus
 		decidedById?: string | null
 		decisionReason?: string | null
 		actionResult?: string | null
@@ -158,7 +163,7 @@ export const buildFormReviewContainer = (
 	const status = options.status ?? "submitted"
 	const submittedAt = submission.createdAt ? Math.floor(new Date(submission.createdAt).getTime() / 1000) : Math.floor(Date.now() / 1000)
 	const decidedAt = Math.floor(Date.now() / 1000)
-	const footer = status === "submitted"
+	const footer = status === "submitted" || status === "locked"
 		? `Submitted • <t:${submittedAt}:f>`
 		: [
 			`Submitted • <t:${submittedAt}:f>`,
@@ -177,11 +182,15 @@ export const buildFormReviewContainer = (
 			...extra.map((line) => new TextDisplay(line)),
 			new Separator({ divider: false, spacing: "small" }),
 			new TextDisplay(`-# ${footer}`),
-			...(status === "submitted"
+			...(status === "submitted" || status === "locked"
 				? [
+					...(status === "locked" ? [new TextDisplay("Locked until further discussion.")] : []),
 					new Row([
-						new FormReviewAcceptButton(submission.id),
-						new FormReviewDenyButton(submission.id)
+						new FormReviewAcceptButton(submission.id, status === "locked"),
+						new FormReviewDenyButton(submission.id, status === "locked"),
+						status === "locked"
+							? new FormReviewUnlockButton(submission.id)
+							: new FormReviewLockButton(submission.id)
 					])
 				]
 				: [])
@@ -206,6 +215,9 @@ const loadSubmission = async (id: unknown) => {
 	}
 	if (submission.status === "accepted" || submission.status === "denied") {
 		return { error: `This submission is already ${submission.status}.` }
+	}
+	if (submission.status === "locked") {
+		return { error: "This submission is locked until further discussion." }
 	}
 	return { id, submission, form }
 }
@@ -390,8 +402,9 @@ export class FormReviewAcceptButton extends Button {
 	style = ButtonStyle.Success
 	ephemeral = true
 
-	constructor(id?: number) {
+	constructor(id?: number, disabled = false) {
 		super()
+		this.disabled = disabled
 		if (id) {
 			this.customId = `form-review-accept:id=${id}`
 		}
@@ -415,8 +428,9 @@ export class FormReviewDenyButton extends Button {
 	style = ButtonStyle.Danger
 	ephemeral = true
 
-	constructor(id?: number) {
+	constructor(id?: number, disabled = false) {
 		super()
+		this.disabled = disabled
 		if (id) {
 			this.customId = `form-review-deny:id=${id}`
 		}
@@ -434,9 +448,107 @@ export class FormReviewDenyButton extends Button {
 	}
 }
 
+export class FormReviewLockButton extends Button {
+	customId = "form-review-lock"
+	label = "Lock"
+	style = ButtonStyle.Secondary
+	ephemeral = true
+
+	constructor(id?: number) {
+		super()
+		if (id) {
+			this.customId = `form-review-lock:id=${id}`
+		}
+	}
+
+	async run(interaction: ButtonInteraction, data: Record<string, unknown>) {
+		const loaded = await loadSubmission(data.id)
+		if ("error" in loaded) {
+			await interaction.reply({
+				components: [resultContainer("Invalid form submission", loaded.error ?? "Unknown error.", "#f85149")]
+			})
+			return
+		}
+		const locked = await recordFormLock(loaded.id)
+		if (!locked) {
+			await interaction.reply({
+				components: [resultContainer("Already reviewed", "This submission is no longer available to lock.", "#f85149")],
+				ephemeral: true
+			})
+			return
+		}
+		await interaction.update({
+			components: [buildFormReviewContainer(loaded.form, locked, { status: "locked" })],
+			allowedMentions: { parse: [] }
+		})
+	}
+}
+
+export class FormReviewUnlockButton extends Button {
+	customId = "form-review-unlock"
+	label = "Unlock"
+	style = ButtonStyle.Secondary
+	ephemeral = true
+
+	constructor(id?: number) {
+		super()
+		if (id) {
+			this.customId = `form-review-unlock:id=${id}`
+		}
+	}
+
+	async run(interaction: ButtonInteraction, data: Record<string, unknown>) {
+		if (interaction.user?.id !== reviewUnlockUserId) {
+			await interaction.reply({
+				components: [resultContainer("Locked", "Only <@439223656200273932> can unlock this submission.", "#f85149")],
+				ephemeral: true,
+				allowedMentions: { parse: [] }
+			})
+			return
+		}
+		if (typeof data.id !== "number") {
+			await interaction.reply({
+				components: [resultContainer("Invalid form submission", "Missing submission id.", "#f85149")],
+				ephemeral: true
+			})
+			return
+		}
+		const submission = await getFormSubmission(data.id)
+		const form = submission ? getFormConfig(submission.formId) : null
+		if (!submission || !form) {
+			await interaction.reply({
+				components: [resultContainer("Invalid form submission", "Could not load this form submission.", "#f85149")],
+				ephemeral: true
+			})
+			return
+		}
+		if (submission.status === "accepted" || submission.status === "denied") {
+			await interaction.reply({
+				components: [resultContainer("Already reviewed", `This submission is already ${submission.status}.`, "#f85149")],
+				ephemeral: true
+			})
+			return
+		}
+		const unlocked = await recordFormUnlock(data.id)
+		if (!unlocked) {
+			await interaction.reply({
+				components: [resultContainer("Already unlocked", "This submission is no longer locked.", "#f85149")],
+				ephemeral: true
+			})
+			return
+		}
+		await interaction.update({
+			components: [buildFormReviewContainer(form, unlocked, { status: "submitted" })],
+			allowedMentions: { parse: [] }
+		})
+	}
+}
+
 export const formReviewComponents = [
 	new FormReviewAcceptButton(),
 	new FormReviewDenyButton(),
+	new FormReviewLockButton(),
+	new FormReviewUnlockButton(),
 	new FormReviewCopyButton()
 ]
 
