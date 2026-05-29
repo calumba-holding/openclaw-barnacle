@@ -4,7 +4,7 @@ export const formSettings = {
 	reviewChannelId: "1467242758183059536",
 	reviewRoleId: "1477360613125787678",
 	clawhubAppealReviewChannelId: "1498032057337647295",
-	clawhubAppealReviewRoleId: null,
+	clawhubAppealReviewRoleId: "1509967254870298794",
 	shadowChannelId: "1464886408090226902",
 	shadowReviewRoleId: "1477504469473427497",
 	discordGuildId: "1456350064065904867",

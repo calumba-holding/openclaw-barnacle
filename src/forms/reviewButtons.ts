@@ -258,6 +258,21 @@ const resultContainer = (title: string, body: string, color: string) =>
 		accentColor: color
 	})
 
+const canReview = (interaction: ButtonInteraction | ModalInteraction, form: FormConfig) =>
+	!form.reviewRoleId || (interaction.member?.roles.some((role) => role.id === form.reviewRoleId) ?? false)
+
+const requireReviewRole = async (interaction: ButtonInteraction | ModalInteraction, form: FormConfig) => {
+	if (canReview(interaction, form)) {
+		return true
+	}
+	await interaction.reply({
+		components: [resultContainer("Review role required", `You need <@&${form.reviewRoleId}> to review this submission.`, "#f85149")],
+		ephemeral: true,
+		allowedMentions: { parse: [] }
+	})
+	return false
+}
+
 const loadSubmission = async (id: unknown) => {
 	if (typeof id !== "number") {
 		return { error: "Missing submission id." }
@@ -312,6 +327,10 @@ const decide = async (
 			components: [resultContainer("Invalid form submission", loaded.error ?? "Unknown error.", "#f85149")],
 			ephemeral: true
 		})
+		return
+	}
+
+	if (!(await requireReviewRole(interaction, loaded.form))) {
 		return
 	}
 
@@ -473,6 +492,9 @@ export class FormReviewAcceptButton extends Button {
 			})
 			return
 		}
+		if (!(await requireReviewRole(interaction, loaded.form))) {
+			return
+		}
 		await interaction.showModal(new FormReviewDecisionModal("accepted", loaded.id))
 	}
 }
@@ -499,6 +521,9 @@ export class FormReviewDenyButton extends Button {
 			})
 			return
 		}
+		if (!(await requireReviewRole(interaction, loaded.form))) {
+			return
+		}
 		await interaction.showModal(new FormReviewDecisionModal("denied", loaded.id))
 	}
 }
@@ -522,6 +547,9 @@ export class FormReviewLockButton extends Button {
 			await interaction.reply({
 				components: [resultContainer("Invalid form submission", loaded.error ?? "Unknown error.", "#f85149")]
 			})
+			return
+		}
+		if (!(await requireReviewRole(interaction, loaded.form))) {
 			return
 		}
 		const locked = await recordFormLock(loaded.id)
