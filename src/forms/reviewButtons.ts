@@ -228,6 +228,7 @@ export const buildFormReviewContainer = (
 	].filter((line): line is string => Boolean(line))
 	return new Container(
 		[
+			...(form.reviewRoleId ? [new TextDisplay(`-# <@&${form.reviewRoleId}>`)] : []),
 			new TextDisplay(`## ${titleFor(form, submission)}`),
 			...detailComponentsFor(form, submission),
 			new Separator({ divider: true, spacing: "small" }),

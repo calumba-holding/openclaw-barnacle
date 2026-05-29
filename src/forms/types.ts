@@ -42,6 +42,7 @@ export type FormConfig = {
 	auth: FormAuthProvider | FormAuthProvider[]
 	requiredAction?: Exclude<ModerationAction, "moderated">
 	reviewChannelId: string
+	reviewRoleId: string | null
 	successMessage: string
 	fields: FormField[]
 	actions: { accept: FormAction[]; deny: FormAction[] }
