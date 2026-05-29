@@ -127,6 +127,23 @@ const validatePayload = (form: FormConfig, payload: Record<string, string>, valu
 	return null
 }
 
+const contextUnavailableResponse = (form: FormConfig, error: unknown) => {
+	console.error(`Failed to fetch ${form.id} form context`, error)
+	return new Response(
+		renderResultPage(
+			form.title,
+			"We couldn't verify your account's moderation status right now. Please try again later or contact staff.",
+			false
+		),
+		{ status: 503, headers: { "content-type": "text/html; charset=utf-8" } }
+	)
+}
+
+const fetchFormContextValues = async (form: FormConfig, user: { id: string; username: string }) =>
+	Object.fromEntries(
+		Object.entries(await fetchFormContext(form, user)).map(([key, value]) => [key, String(value ?? "")])
+	)
+
 const threadNameFor = (form: FormConfig, submission: Awaited<ReturnType<typeof createFormSubmission>>) => {
 	const provider = submission.authProvider
 		? `${submission.authProvider.charAt(0).toUpperCase()}${submission.authProvider.slice(1)}`
@@ -268,9 +285,10 @@ const handleFormGet = async (request: Request, form: FormConfig) => {
 		}
 		return new Response(renderPage(form.title, <AuthGateRoute form={form} />), { headers: { "content-type": "text/html; charset=utf-8" } })
 	}
-	const values = Object.fromEntries(
-		Object.entries(await fetchFormContext(form, user)).map(([key, value]) => [key, String(value ?? "")])
-	)
+	const values = await fetchFormContextValues(form, user).catch((error) => contextUnavailableResponse(form, error))
+	if (values instanceof Response) {
+		return values
+	}
 	const error = eligibilityError(form, values, user.username)
 	if (error) {
 		return new Response(renderResultPage(form.title, error, false), { status: 403, headers: { "content-type": "text/html; charset=utf-8" } })
@@ -285,9 +303,10 @@ const handleFormSubmit = async (request: Request, form: FormConfig, client: Clie
 	if (!user) {
 		return new Response(renderPage(form.title, <AuthGateRoute form={form} error="Sign in expired. Try again." />), { status: 400, headers: { "content-type": "text/html; charset=utf-8" } })
 	}
-	const context = Object.fromEntries(
-		Object.entries(await fetchFormContext(form, user)).map(([key, value]) => [key, String(value ?? "")])
-	)
+	const context = await fetchFormContextValues(form, user).catch((error) => contextUnavailableResponse(form, error))
+	if (context instanceof Response) {
+		return context
+	}
 	const error = validatePayload(form, collected.payload, context, user.username)
 	if (error) {
 		return new Response(renderPage(form.title, <FormRoute form={form} session={collected.session} user={user} values={context} error={error} />), { status: 400, headers: { "content-type": "text/html; charset=utf-8" } })
