@@ -5,6 +5,7 @@ import ClaimCommand from "./commands/claim.js"
 import GithubCommand from "./commands/github.js"
 import MaintainerCommand from "./commands/maintainer.js"
 import HelperRootCommand from "./commands/helper.js"
+import NominateCommand from "./commands/nominate.js"
 import RoleCommand from "./commands/role.js"
 import SayRootCommand from "./commands/say.js"
 import SolvedModCommand from "./commands/solvedMod.js"
@@ -20,6 +21,7 @@ import {
 	formReviewModals
 } from "./forms/reviewButtons.js"
 import { fscRequestComponents } from "./components/fscRequestButtons.js"
+import { nominationComponents } from "./components/nominationButtons.js"
 import { whoisDeleteComponents } from "./components/whoisDeleteButton.js"
 import { hydrateRuntimeEnv, type HermitEnv } from "./runtime/env.js"
 import {
@@ -29,6 +31,10 @@ import {
 } from "./server/claimServer.js"
 import { handleFormsRequest } from "./forms/server.js"
 import { registerHelperLogsRoutes } from "./server/helperLogsServer.js"
+import {
+	runNominationExpiry,
+	runNominationGrantRecovery
+} from "./services/nominationExpiry.js"
 import { runThreadLengthMonitor } from "./services/threadLengthMonitor.js"
 import { handleContentRightsApiRequest } from "./clawhubContentRights/api.js"
 
@@ -53,6 +59,7 @@ export const client = new Client(
 			new RoleCommand(),
 			new HelperRootCommand(),
 			new ClaimCommand(),
+			new NominateCommand(),
 			new MaintainerCommand(),
 			new AdminCommand()
 		],
@@ -69,6 +76,7 @@ export const client = new Client(
 			...claimReviewComponents,
 			...formReviewComponents,
 			...fscRequestComponents,
+			...nominationComponents,
 			...whoisDeleteComponents
 		],
 		modals: [...claimReviewModals, ...formReviewModals]
@@ -123,9 +131,13 @@ export default {
 			waitUntil: ctx.waitUntil.bind(ctx)
 		})
 	},
-	scheduled(_controller: ScheduledController, env: HermitEnv, ctx: ExecutionContext) {
+	scheduled(controller: ScheduledController, env: HermitEnv, ctx: ExecutionContext) {
 		hydrateRuntimeEnv(env)
-		ctx.waitUntil(runThreadLengthMonitor(client))
+		ctx.waitUntil(runNominationExpiry(client))
+		ctx.waitUntil(runNominationGrantRecovery(client))
+		if (!controller.cron || controller.cron === "0 */2 * * *") {
+			ctx.waitUntil(runThreadLengthMonitor(client))
+		}
 	}
 } satisfies ExportedHandler<Env>
 

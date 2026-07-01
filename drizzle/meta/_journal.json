@@ -29,6 +29,41 @@
       "when": 1781564580172,
       "tag": "0003_clawhub_content_rights",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "6",
+      "when": 1782182989552,
+      "tag": "0004_puzzling_omega_flight",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1782184143387,
+      "tag": "0005_lethal_senator_kelly",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "6",
+      "when": 1782242214106,
+      "tag": "0006_clean_prism",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "6",
+      "when": 1782243715774,
+      "tag": "0007_overrated_mauler",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "6",
+      "when": 1782868410044,
+      "tag": "0008_aspiring_mojo",
+      "breakpoints": true
     }
   ]
 }
