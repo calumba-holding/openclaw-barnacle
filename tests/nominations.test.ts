@@ -60,6 +60,7 @@ const createNomination = (database: Database) => {
 
 describe("nomination migration", () => {
 	it("requires three configured approvals", () => {
+		expect(nominationConfig.nominationChannelIds).toEqual(["1471743636592001024"])
 		expect(nominationConfig.requiredApprovals).toBe(3)
 		expect(nominationConfig.maxReasonLength).toBeLessThanOrEqual(500)
 	})
