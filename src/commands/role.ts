@@ -224,7 +224,6 @@ export default class RoleCommand extends CommandWithSubcommands {
 	contexts = [InteractionContextType.Guild]
 	integrationTypes = [ApplicationIntegrationType.GuildInstall]
 	subcommands = [
-		new RoleToggle("showcase-ban", "123456789012345678"), 
 		new RoleToggle("clawtributor", "1458375944111915051"),
 		new RoleToggleWithAck(
 			"maintainer-guest",

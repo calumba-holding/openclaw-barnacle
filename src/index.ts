@@ -9,6 +9,7 @@ import HelperRootCommand from "./commands/helper.js"
 import NominateCommand from "./commands/nominate.js"
 import RoleCommand from "./commands/role.js"
 import SayRootCommand from "./commands/say.js"
+import SlapCommand from "./commands/slap.js"
 import SolvedModCommand from "./commands/solvedMod.js"
 import AutoModerationActionExecution from "./events/autoModerationActionExecution.js"
 import AutoPublishMessageCreate from "./events/autoPublishMessageCreate.js"
@@ -65,6 +66,7 @@ export const client = new Client(
 			new HelperRootCommand(),
 			new ClaimCommand(),
 			new NominateCommand(),
+			new SlapCommand(),
 			new MaintainerCommand(),
 			new AdminCommand()
 		],
