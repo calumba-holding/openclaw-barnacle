@@ -1,5 +1,7 @@
 import {
 	slapConfig,
+	slapSceneUrl,
+	slapSceneVariants,
 	type SlapFish,
 	type SlapOutcome,
 	type SlapRarity
@@ -241,6 +243,8 @@ export const generateSlapResult = (input: {
 		fish.name
 	)
 	const metrics = metricsFor(outcome, random)
+	const fishCondition = pickOne(fishConditions[outcome], random)
+	const sceneVariant = pickOne(slapSceneVariants, random)
 
 	return {
 		fishSlug: fish.slug,
@@ -250,8 +254,8 @@ export const generateSlapResult = (input: {
 		headline: slapConfig.headlines[outcome],
 		narrative,
 		...metrics,
-		fishCondition: pickOne(fishConditions[outcome], random),
-		imageUrl: fish.imageUrl
+		fishCondition,
+		imageUrl: slapSceneUrl(fish.slug, outcome, sceneVariant)
 	}
 }
 

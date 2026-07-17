@@ -19,11 +19,17 @@ export type SlapFish = {
 	name: string
 	rarity: SlapRarity
 	weight: number
-	imageUrl: string
 }
 
-const assetUrl = (fileName: string) =>
-	`https://raw.githubusercontent.com/openclaw/hermit/main/assets/slap/${fileName}`
+export const slapSceneVariants = [1, 2, 3] as const
+export type SlapSceneVariant = typeof slapSceneVariants[number]
+
+export const slapSceneUrl = (
+	fishSlug: string,
+	outcome: SlapOutcome,
+	variant: SlapSceneVariant
+) =>
+	`https://raw.githubusercontent.com/openclaw/hermit/main/assets/slap/scenes/${fishSlug}/${outcome}-${variant.toString().padStart(2, "0")}.webp`
 
 export const slapConfig = {
 	guildId: nominationConfig.guildId,
@@ -47,85 +53,73 @@ export const slapConfig = {
 			slug: "procedural-herring",
 			name: "Procedural Herring",
 			rarity: "common",
-			weight: 22,
-			imageUrl: assetUrl("bureaucratic-herring.webp")
+			weight: 22
 		},
 		{
 			slug: "compliance-sardine",
 			name: "Compliance Sardine",
 			rarity: "common",
-			weight: 20,
-			imageUrl: assetUrl("bureaucratic-herring.webp")
+			weight: 20
 		},
 		{
 			slug: "moderate-concern-mackerel",
 			name: "Mackerel of Moderate Concern",
 			rarity: "common",
-			weight: 18,
-			imageUrl: assetUrl("bureaucratic-herring.webp")
+			weight: 18
 		},
 		{
 			slug: "rubber-stamp-trout",
 			name: "Rubber-Stamp Trout",
 			rarity: "common",
-			weight: 16,
-			imageUrl: assetUrl("rubber-stamp-trout.webp")
+			weight: 16
 		},
 		{
 			slug: "escalation-salmon",
 			name: "Escalation Salmon",
 			rarity: "uncommon",
-			weight: 10,
-			imageUrl: assetUrl("escalation-salmon.webp")
+			weight: 10
 		},
 		{
 			slug: "inflatable-pufferfish",
 			name: "Inflatable Pufferfish",
 			rarity: "uncommon",
-			weight: 9,
-			imageUrl: assetUrl("pufferfish-compliance.webp")
+			weight: 9
 		},
 		{
 			slug: "filing-cabinet-flounder",
 			name: "Filing-Cabinet Flounder",
 			rarity: "uncommon",
-			weight: 8,
-			imageUrl: assetUrl("rubber-stamp-trout.webp")
+			weight: 8
 		},
 		{
 			slug: "due-process-swordfish",
 			name: "Swordfish of Due Process",
 			rarity: "rare",
-			weight: 4,
-			imageUrl: assetUrl("due-process-swordfish.webp")
+			weight: 4
 		},
 		{
 			slug: "corrective-action-eel",
 			name: "Corrective-Action Eel",
 			rarity: "rare",
-			weight: 4,
-			imageUrl: assetUrl("corrective-eel.webp")
+			weight: 4
 		},
 		{
 			slug: "sturgeon-general",
 			name: "Sturgeon-General",
 			rarity: "epic",
-			weight: 1.5,
-			imageUrl: assetUrl("due-process-swordfish.webp")
+			weight: 1.5
 		},
 		{
 			slug: "final-notice-tuna",
 			name: "Frozen Tuna of Final Notice",
 			rarity: "epic",
-			weight: 1,
-			imageUrl: assetUrl("final-notice-tuna.webp")
+			weight: 1
 		},
 		{
 			slug: "ancient-coelacanth",
 			name: "Ancient Coelacanth",
 			rarity: "legendary",
-			weight: 0.3,
-			imageUrl: assetUrl("ancient-coelacanth.webp")
+			weight: 0.3
 		}
 	] satisfies SlapFish[],
 	outcomeWeights: [

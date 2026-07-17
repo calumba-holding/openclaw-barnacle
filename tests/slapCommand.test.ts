@@ -22,7 +22,12 @@ import RoleCommand from "../src/commands/role.js"
 import {
 	buildSlapIncidentContainer
 } from "../src/components/slapButtons.js"
-import { slapConfig } from "../src/config/slap.js"
+import {
+	slapConfig,
+	slapSceneUrl,
+	slapSceneVariants,
+	type SlapOutcome
+} from "../src/config/slap.js"
 import {
 	bindSlapMessage,
 	createSlapEvent,
@@ -139,15 +144,37 @@ describe("slap catalog and engine", () => {
 		expect(new Set(slapConfig.fish.map((fish) => fish.rarity))).toEqual(
 			new Set(["common", "uncommon", "rare", "epic", "legendary"])
 		)
-		expect(new Set(slapConfig.fish.map((fish) => fish.imageUrl)).size).toBe(8)
-		for (const imageUrl of new Set(
-			slapConfig.fish.map((fish) => fish.imageUrl)
-		)) {
-			const fileName = imageUrl.split("/").at(-1)
-			expect(fileName).toBeDefined()
-			const path = `assets/slap/${fileName}`
+		const standardOutcomes = [
+			"normal",
+			"critical",
+			"dodge",
+			"refusal",
+			"double",
+			"self",
+			"hermit",
+			"rock_lobster",
+			"bot"
+		] satisfies SlapOutcome[]
+		const imageUrls = slapConfig.fish.flatMap((fish) => {
+			const outcomes = fish.rarity === "legendary"
+				? [...standardOutcomes, "legendary" as const]
+				: standardOutcomes
+			return outcomes.flatMap((outcome) =>
+				slapSceneVariants.map((variant) =>
+					slapSceneUrl(fish.slug, outcome, variant)
+				)
+			)
+		})
+
+		expect(imageUrls).toHaveLength(327)
+		expect(new Set(imageUrls).size).toBe(327)
+		for (const imageUrl of imageUrls) {
+			const path = imageUrl.replace(
+				"https://raw.githubusercontent.com/openclaw/hermit/main/",
+				""
+			)
 			expect(existsSync(path)).toBe(true)
-			expect(statSync(path).size).toBeGreaterThan(100_000)
+			expect(statSync(path).size).toBeGreaterThan(50_000)
 		}
 		expect(
 			Object.values(slapConfig.lines).reduce(
@@ -162,6 +189,9 @@ describe("slap catalog and engine", () => {
 		const second = baseResult("stable-interaction")
 
 		expect(second).toEqual(first)
+		expect(first.imageUrl).toContain(
+			`/assets/slap/scenes/${first.fishSlug}/${first.outcome}-`
+		)
 	})
 
 	it("handles self, Hermit, Rock Lobster, and generic bots explicitly", () => {
