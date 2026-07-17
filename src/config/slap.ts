@@ -41,7 +41,8 @@ export const slapOutcomesForRarity = (rarity: SlapRarity) =>
 		? [...slapStandardOutcomes, "legendary" as const]
 		: [...slapStandardOutcomes]
 
-export const slapSceneRevision = "main"
+export const slapSceneRevision =
+	"da5edf3065a5440241f80fa4d07be4cb72384151"
 
 export const slapSceneUrl = (
 	fishSlug: string,

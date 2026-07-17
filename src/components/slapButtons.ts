@@ -31,19 +31,38 @@ export const buildSlapNoticeContainer = (
 	accentColor = "#f1c40f"
 ) => new Container([new TextDisplay(body)], { accentColor })
 
-export const buildSlapIncidentContainer = (event: SlapEvent) => {
+export type SlapIncidentMedia = {
+	imageUrl?: string | null
+	counterImageUrl?: string | null
+}
+
+export const buildSlapIncidentContainer = (
+	event: SlapEvent,
+	media: SlapIncidentMedia = {}
+) => {
 	const rarity = rarityDetails(event.rarity)
 	const incidentId = formatSlapIncidentId(event.id)
+	const imageUrl = media.imageUrl === undefined
+		? event.imageUrl
+		: media.imageUrl
 	const components: NonNullable<ConstructorParameters<typeof Container>[0]> = [
 		new TextDisplay(
 			`## Fishery Incident ${incidentId}\n**${rarity.label.toUpperCase()} · ${event.fishName}**`
-		),
-		new MediaGallery([
+		)
+	]
+	if (imageUrl) {
+		components.push(new MediaGallery([
 			{
-				url: event.imageUrl,
+				url: imageUrl,
 				description: `${event.fishName}, assigned to ${incidentId}`
 			}
-		]),
+		]))
+	} else {
+		components.push(
+			new TextDisplay("-# Incident artwork is temporarily unavailable.")
+		)
+	}
+	components.push(
 		new TextDisplay(
 			`### ${event.headline}\n${event.narrative}\n\n${metricText(
 				event.impact,
@@ -51,7 +70,7 @@ export const buildSlapIncidentContainer = (event: SlapEvent) => {
 				event.fishCondition
 			)}`
 		)
-	]
+	)
 
 	if (
 		event.counteredAt &&
@@ -65,6 +84,9 @@ export const buildSlapIncidentContainer = (event: SlapEvent) => {
 		event.counterImageUrl
 	) {
 		const counterRarity = rarityDetails(event.counterRarity)
+		const counterImageUrl = media.counterImageUrl === undefined
+			? event.counterImageUrl
+			: media.counterImageUrl
 		components.push(
 			new Separator({ divider: true, spacing: "small" }),
 			new TextDisplay(
@@ -73,14 +95,20 @@ export const buildSlapIncidentContainer = (event: SlapEvent) => {
 					event.counterDignityRemaining,
 					event.counterFishCondition
 				)}`
-			),
-			new MediaGallery([
+			)
+		)
+		if (counterImageUrl) {
+			components.push(new MediaGallery([
 				{
-					url: event.counterImageUrl,
+					url: counterImageUrl,
 					description: `${event.counterFishName}, deployed as the counter-filing for ${incidentId}`
 				}
-			])
-		)
+			]))
+		} else {
+			components.push(
+				new TextDisplay("-# Counter-filing artwork is temporarily unavailable.")
+			)
+		}
 	}
 
 	const status = [

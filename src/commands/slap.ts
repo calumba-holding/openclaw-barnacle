@@ -6,7 +6,6 @@ import {
 	InteractionContextType
 } from "@buape/carbon"
 import {
-	buildSlapIncidentContainer,
 	buildSlapNoticeContainer
 } from "../components/slapButtons.js"
 import { slapConfig } from "../config/slap.js"
@@ -20,6 +19,7 @@ import {
 	type SlapSubject
 } from "../services/slapEngine.js"
 import { hasSlapRole } from "../services/slapInteractions.js"
+import { buildSlapIncidentPayload } from "../services/slapMedia.js"
 import BaseCommand from "./base.js"
 
 type SlapTarget = SlapSubject
@@ -127,8 +127,9 @@ abstract class BaseSlapCommand extends BaseCommand {
 
 		await interaction.defer()
 		const event = creation.event
+		const payload = await buildSlapIncidentPayload(event)
 		const message = await interaction.reply({
-			components: [buildSlapIncidentContainer(event)],
+			...payload,
 			allowedMentions: {
 				users: [...new Set([event.actorId, event.targetId])]
 			}

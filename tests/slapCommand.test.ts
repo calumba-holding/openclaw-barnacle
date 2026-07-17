@@ -1,5 +1,12 @@
 import { Database } from "bun:sqlite"
-import { describe, expect, it } from "bun:test"
+import {
+	afterAll,
+	beforeAll,
+	describe,
+	expect,
+	it,
+	spyOn
+} from "bun:test"
 import {
 	existsSync,
 	readFileSync,
@@ -44,11 +51,35 @@ import {
 	getAppealRuling
 } from "../src/services/slapEngine.js"
 import {
+	buildSlapIncidentPayload,
+	setSlapImageFetcherForTesting
+} from "../src/services/slapMedia.js"
+import {
 	handleSlapAppeal,
 	handleSlapBack,
 	hasSlapRole
 } from "../src/services/slapInteractions.js"
 import { SqliteD1Database } from "./helpers/sqliteD1.js"
+
+const validWebp = new Uint8Array([
+	0x52, 0x49, 0x46, 0x46,
+	0x04, 0x00, 0x00, 0x00,
+	0x57, 0x45, 0x42, 0x50
+])
+
+beforeAll(() => {
+	setSlapImageFetcherForTesting(
+		async () =>
+			new Response(validWebp, {
+				status: 200,
+				headers: { "content-type": "image/webp" }
+			})
+	)
+})
+
+afterAll(() => {
+	setSlapImageFetcherForTesting(null)
+})
 
 const slapMigrationPath = readdirSync("drizzle")
 	.find((file) => file.startsWith("0010_") && file.endsWith(".sql"))
@@ -156,7 +187,7 @@ describe("slap catalog and engine", () => {
 
 		expect(imageUrls).toHaveLength(327)
 		expect(new Set(imageUrls).size).toBe(327)
-		expect(slapSceneRevision).toBe("main")
+		expect(slapSceneRevision).toMatch(/^[a-f0-9]{40}$/)
 		const repositoryRevisionPrefix =
 			`https://raw.githubusercontent.com/openclaw/hermit/${slapSceneRevision}/`
 		for (const imageUrl of imageUrls) {
@@ -359,6 +390,72 @@ describe("slap event ledger", () => {
 })
 
 describe("slap Carbon incident card", () => {
+	it("uploads artwork to Discord attachments instead of external media", async () => {
+		const { owner } = testDatabase()
+		try {
+			const creation = await createEvent()
+			if (creation.kind === "cooldown") {
+				throw new Error("Unexpected cooldown")
+			}
+			const event = creation.event
+			const requested: string[] = []
+			const payload = await buildSlapIncidentPayload(
+				event,
+				async (input) => {
+					requested.push(input.toString())
+					return new Response(validWebp, {
+						status: 200,
+						headers: { "content-type": "image/webp" }
+					})
+				}
+			)
+			const serialized = serializePayload(payload)
+			const gallery = flattenComponents(serialized).find(
+				(component) => component.type === 12
+			) as { items?: Array<{ media?: { url?: string } }> } | undefined
+
+			expect(requested).toEqual([event.imageUrl])
+			expect(payload.files).toHaveLength(1)
+			expect(payload.files?.[0]?.name).toBe(
+				`slap-${event.id}-initial.webp`
+			)
+			expect(gallery?.items?.[0]?.media?.url).toBe(
+				`attachment://slap-${event.id}-initial.webp`
+			)
+		} finally {
+			owner.close()
+		}
+	})
+
+	it("omits broken external media when attachment retrieval fails", async () => {
+		const { owner } = testDatabase()
+		const consoleError = spyOn(console, "error").mockImplementation(() => {})
+		try {
+			const creation = await createEvent()
+			if (creation.kind === "cooldown") {
+				throw new Error("Unexpected cooldown")
+			}
+			const event = creation.event
+			const payload = await buildSlapIncidentPayload(
+				event,
+				async () => new Response("not found", { status: 404 })
+			)
+			const serialized = serializePayload(payload)
+			const components = flattenComponents(serialized)
+
+			expect(payload.files).toBeUndefined()
+			expect(
+				components.some((component) => component.type === 12)
+			).toBe(false)
+			expect(payloadText(payload)).toContain(
+				"Incident artwork is temporarily unavailable."
+			)
+		} finally {
+			consoleError.mockRestore()
+			owner.close()
+		}
+	})
+
 	it("renders art, metrics, incident controls, and counter state", async () => {
 		const { owner, database } = testDatabase()
 		try {

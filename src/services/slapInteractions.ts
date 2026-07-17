@@ -5,7 +5,6 @@ import {
 	TextDisplay
 } from "@buape/carbon"
 import {
-	buildSlapIncidentContainer,
 	buildSlapNoticeContainer
 } from "../components/slapButtons.js"
 import { slapConfig } from "../config/slap.js"
@@ -21,6 +20,7 @@ import {
 	generateSlapResult,
 	getAppealRuling
 } from "./slapEngine.js"
+import { buildSlapIncidentPayload } from "./slapMedia.js"
 
 export const hasSlapRole = (roleIds: string[]) =>
 	roleIds.some((roleId) =>
@@ -83,8 +83,9 @@ const updateCanonicalIncident = async (
 	interaction: ButtonInteraction,
 	event: SlapEvent
 ) => {
+	const payload = await buildSlapIncidentPayload(event)
 	await interaction.update({
-		components: [buildSlapIncidentContainer(event)],
+		...payload,
 		allowedMentions: { parse: [] }
 	})
 }
@@ -218,8 +219,9 @@ const handleSlapAppealInternal = async (
 		ephemeral: true,
 		allowedMentions: { parse: [] }
 	})
+	const payload = await buildSlapIncidentPayload(recorded.event)
 	await interaction.message?.edit({
-		components: [buildSlapIncidentContainer(recorded.event)],
+		...payload,
 		allowedMentions: { parse: [] }
 	}).catch((error) => {
 		console.error(
