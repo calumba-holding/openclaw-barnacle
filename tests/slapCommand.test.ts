@@ -156,7 +156,7 @@ describe("slap catalog and engine", () => {
 
 		expect(imageUrls).toHaveLength(327)
 		expect(new Set(imageUrls).size).toBe(327)
-		expect(slapSceneRevision).toMatch(/^[a-f0-9]{40}$/)
+		expect(slapSceneRevision).toBe("main")
 		const repositoryRevisionPrefix =
 			`https://raw.githubusercontent.com/openclaw/hermit/${slapSceneRevision}/`
 		for (const imageUrl of imageUrls) {
