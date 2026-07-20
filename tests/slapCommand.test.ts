@@ -541,11 +541,12 @@ describe("/slap and Fish Slap", () => {
 		expect(context.type).toBe(ApplicationCommandType.User)
 	})
 
-	it("authorizes Community Team and both Maintainer roles", () => {
+	it("authorizes Community Team, Maintainers, and OpenClaw Foundation", () => {
 		expect(slapConfig.authorizedRoleIds).toEqual([
 			"1477360613125787678",
 			"1457214688806047756",
-			"1503268035908075590"
+			"1503268035908075590",
+			"1509063061598769333"
 		])
 		for (const roleId of slapConfig.authorizedRoleIds) {
 			expect(hasSlapRole([roleId])).toBe(true)
@@ -575,7 +576,7 @@ describe("/slap and Fish Slap", () => {
 		await new SlapCommand().run(interaction)
 
 		expect(payloadText(replies[0])).toContain(
-			"Community Team or Maintainer roles only"
+			"OpenClaw Foundation roles only"
 		)
 		expect(replies[0]).toEqual(expect.objectContaining({ ephemeral: true }))
 	})
@@ -628,7 +629,7 @@ describe("/slap and Fish Slap", () => {
 })
 
 describe("slap buttons", () => {
-	it("restricts slap-back to an authorized target, then updates once", async () => {
+	it("allows the named target to slap back regardless of roles", async () => {
 		const { owner, database } = testDatabase()
 		try {
 			const creation = await createEvent()
@@ -671,17 +672,9 @@ describe("slap buttons", () => {
 				"Only the named target"
 			)
 
-			const noRole = makeInteraction(event!.targetId, ["unrelated-role"])
-			await handleSlapBack(noRole.interaction, { id: event!.id })
-			expect(payloadText(noRole.replies[0])).toContain(
-				"Community Team or Maintainer role"
-			)
-
-			const target = makeInteraction(
-				event!.targetId,
-				[slapConfig.authorizedRoleIds[2]]
-			)
+			const target = makeInteraction(event!.targetId, [])
 			await handleSlapBack(target.interaction, { id: event!.id })
+			expect(target.replies).toHaveLength(0)
 			expect(target.updates).toHaveLength(1)
 			expect(payloadText(target.updates[0])).toContain(
 				"Counter-filing accepted"

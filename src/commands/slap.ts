@@ -57,7 +57,7 @@ abstract class BaseSlapCommand extends BaseCommand {
 		)) {
 			await this.replyWithNotice(
 				interaction,
-				"Community Team or Maintainer roles only. The fish cage remains locked.",
+				"Community Team, Maintainer, Maintainer Guest, or OpenClaw Foundation roles only. The fish cage remains locked.",
 				"#f85149"
 			)
 			return

@@ -113,16 +113,6 @@ const handleSlapBackInternal = async (
 		)
 		return
 	}
-	if (!hasSlapRole(
-		interaction.member?.roles.map((role) => role.id) ?? []
-	)) {
-		await replyWithNotice(
-			interaction,
-			"Counter-slaps require an active Community Team or Maintainer role.",
-			"#f85149"
-		)
-		return
-	}
 
 	if (event.counteredAt) {
 		await updateCanonicalIncident(interaction, event)

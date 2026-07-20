@@ -670,11 +670,12 @@ describe("/lobster and Release Lobster", () => {
 		}
 	})
 
-	it("authorizes exactly Community Team, Maintainer, and Maintainer Guest", () => {
+	it("authorizes Community Team, Maintainers, and OpenClaw Foundation", () => {
 		expect(lobsterConfig.authorizedRoleIds).toEqual([
 			"1477360613125787678",
 			"1457214688806047756",
-			"1503268035908075590"
+			"1503268035908075590",
+			"1509063061598769333"
 		])
 		for (const roleId of lobsterConfig.authorizedRoleIds) {
 			expect(hasLobsterRole([roleId])).toBe(true)
@@ -704,7 +705,7 @@ describe("/lobster and Release Lobster", () => {
 		await new LobsterCommand().run(interaction)
 
 		expect(payloadText(replies[0])).toContain(
-			"Community Team, Maintainer, or Maintainer Guest roles only"
+			"OpenClaw Foundation roles only"
 		)
 		expect(replies[0]).toEqual(expect.objectContaining({ ephemeral: true }))
 	})

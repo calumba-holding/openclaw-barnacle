@@ -56,7 +56,7 @@ abstract class BaseLobsterCommand extends BaseCommand {
 		) {
 			await this.replyWithNotice(
 				interaction,
-				"Community Team, Maintainer, or Maintainer Guest roles only. The lobster gate remains closed.",
+				"Community Team, Maintainer, Maintainer Guest, or OpenClaw Foundation roles only. The lobster gate remains closed.",
 				lobsterConfig.errorColor
 			)
 			return
